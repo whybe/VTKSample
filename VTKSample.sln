@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vtkMySQLSample", "vtkMySQLSample\vtkMySQLSample.vcxproj", "{42D76425-057A-4362-89C0-0474E0B4D589}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vtkMySQLSample2", "vtkMySQLSample2\vtkMySQLSample2.vcxproj", "{E34C0FC7-59FD-4AB8-934E-C968736DB9D7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CvtkApp", "vtkWindow\vtkWindow.vcxproj", "{F5669416-4335-4DBE-8E93-206FA119E8FD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vtkApp", "vtkApp\vtkApp.vcxproj", "{FFF7C2AB-B586-461D-A0FE-6D4F890C6BFB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{42D76425-057A-4362-89C0-0474E0B4D589}.Debug|Win32.ActiveCfg = Debug|Win32
+		{42D76425-057A-4362-89C0-0474E0B4D589}.Debug|Win32.Build.0 = Debug|Win32
+		{42D76425-057A-4362-89C0-0474E0B4D589}.Release|Win32.ActiveCfg = Release|Win32
+		{42D76425-057A-4362-89C0-0474E0B4D589}.Release|Win32.Build.0 = Release|Win32
+		{E34C0FC7-59FD-4AB8-934E-C968736DB9D7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E34C0FC7-59FD-4AB8-934E-C968736DB9D7}.Debug|Win32.Build.0 = Debug|Win32
+		{E34C0FC7-59FD-4AB8-934E-C968736DB9D7}.Release|Win32.ActiveCfg = Release|Win32
+		{E34C0FC7-59FD-4AB8-934E-C968736DB9D7}.Release|Win32.Build.0 = Release|Win32
+		{F5669416-4335-4DBE-8E93-206FA119E8FD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F5669416-4335-4DBE-8E93-206FA119E8FD}.Debug|Win32.Build.0 = Debug|Win32
+		{F5669416-4335-4DBE-8E93-206FA119E8FD}.Release|Win32.ActiveCfg = Release|Win32
+		{F5669416-4335-4DBE-8E93-206FA119E8FD}.Release|Win32.Build.0 = Release|Win32
+		{FFF7C2AB-B586-461D-A0FE-6D4F890C6BFB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FFF7C2AB-B586-461D-A0FE-6D4F890C6BFB}.Debug|Win32.Build.0 = Debug|Win32
+		{FFF7C2AB-B586-461D-A0FE-6D4F890C6BFB}.Release|Win32.ActiveCfg = Release|Win32
+		{FFF7C2AB-B586-461D-A0FE-6D4F890C6BFB}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
