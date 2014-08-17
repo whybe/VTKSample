@@ -16,6 +16,10 @@
 #include <vtkRenderWindow.h>
 #include <vtkRendererCollection.h>
 #include <vtkObjectFactory.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
+#include <vtkCellData.h>
+#include <vtkStdString.h>
 
 class vtkMouseInteractorStyle : public vtkInteractorStyleTrackballCamera
 {
@@ -29,8 +33,11 @@ public:
 	vtkPolyData *polyData;
 	vtkRenderer *selectedRenderer;
 
+	int addressCount;
+
     vtkSmartPointer<vtkDataSetMapper> selectedMapper;
     vtkSmartPointer<vtkActor> selectedActor;
+	vtkSmartPointer<vtkTextActor> textActor;
 
 public:
 	vtkMouseInteractorStyle();

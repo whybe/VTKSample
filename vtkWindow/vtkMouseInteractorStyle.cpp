@@ -1,14 +1,18 @@
 #include "StdAfx.h"
 #include "vtkMouseInteractorStyle.h"
 
+#include "vtkUtil.h"
+
 vtkStandardNewMacro(vtkMouseInteractorStyle);
 
 vtkMouseInteractorStyle::vtkMouseInteractorStyle()
 {
+	addressCount = -1;
 	polyData = NULL;
 	selectedRenderer = NULL;
 	selectedMapper = vtkSmartPointer<vtkDataSetMapper>::New();
     selectedActor = vtkSmartPointer<vtkActor>::New();
+	textActor = vtkSmartPointer<vtkTextActor>::New();
 }
 
 vtkMouseInteractorStyle::~vtkMouseInteractorStyle()
@@ -52,7 +56,7 @@ void vtkMouseInteractorStyle::OnMouseMove()
 	std::cout << "Cell id is: " << picker->GetCellId() << std::endl;
 	//double* worldPosition = picker->GetPickPosition();
 	
-	if(picker->GetCellId() == -1)
+	if(picker->GetCellId() == -1 || picker->GetCellId() >= this->addressCount)
 	{
 		//this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(selectedActor);
 
@@ -123,6 +127,23 @@ void vtkMouseInteractorStyle::OnMouseMove()
 		//this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(selectedActor);
 		selectedRenderer->AddActor(selectedActor);
 		//this->GetDefaultRenderer()->GetRenderWindow()->Render();
+
+		// Setup the text and add it to the window  
+		//    textActor->GetTextProperty()->SetFontFamilyToTimes();
+		//std::cout << textActor->GetTextProperty()->GetFontFamilyAsString() << std::endl;
+		textActor->GetTextProperty()->SetFontSize(24);
+		textActor->SetPosition2(10, 40);
+		vtkVariant address = vtkIntArray::SafeDownCast(this->polyData->GetCellData()->GetArray("Address"))->GetVariantValue(picker->GetCellId());
+		vtkVariant updated = vtkIntArray::SafeDownCast(this->polyData->GetCellData()->GetArray("Total"))->GetVariantValue(picker->GetCellId());
+		std::stringstream stream;
+		stream << "Address : " << vtkUtil::int_to_hex<int>(address.ToInt()) << std::endl 
+			<< "Updated : " << updated.ToString();
+		textActor->SetInput(stream.str().c_str());
+		textActor->GetTextProperty()->SetColor(1.0, 0.0, 0.0);
+
+		textActor->VisibilityOn();
+
+		selectedRenderer->AddActor2D(textActor);
 	}
 
 	//if(picker->GetCellId() != oldCellId)

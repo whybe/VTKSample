@@ -129,6 +129,7 @@ void CvtkMainView::OnInitialUpdate()
 			GetDocument()->planeSource->GetOutput());
 		actor->SetMapper(polyDataMapper);
 		
+		mouseInteractorStyle->addressCount = GetDocument()->addressCount;
 		mouseInteractorStyle->polyData = 
 			GetDocument()->planeSource->GetOutput();
 

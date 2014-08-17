@@ -86,7 +86,7 @@ BOOL CvtkDoc::OnNewDocument()
 	planeSource->Update();
 
 	//MakeLUTFromCTF(tableSize, lut, addressCount, updates);
-	MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(updateTable->GetColumnByName("Total")));
+	vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(updateTable->GetColumnByName("Total")));
 
 	vtkSmartPointer<vtkUnsignedCharArray> colorData = 
 		vtkSmartPointer<vtkUnsignedCharArray>::New();
@@ -95,8 +95,10 @@ BOOL CvtkDoc::OnNewDocument()
 	std::cout 
 		<< "Using a lookup table created from a color transfer function."
 		<< std::endl;
-	MakeCellData(tableSize, lut, colorData);
+	vtkUtil::MakeCellData(tableSize, lut, colorData);
 	planeSource->GetOutput()->GetCellData()->SetScalars(colorData);
+	planeSource->GetOutput()->GetCellData()->AddArray(updateTable->GetColumnByName("Address"));
+	planeSource->GetOutput()->GetCellData()->AddArray(updateTable->GetColumnByName("Total"));
 
 #ifdef CHECK_TIME
 	CHECK_TIME_END(Time, err);
@@ -287,6 +289,12 @@ BOOL CvtkDoc::QueryData()
 	sections->SetNumberOfValues(addressCount);
 	sections->SetName("Section");
 	updateTable->AddColumn(sections);
+	
+	vtkSmartPointer<vtkIntArray> addresses = vtkSmartPointer<vtkIntArray>::New();
+	addresses->SetNumberOfComponents(1);
+	addresses->SetNumberOfValues(addressCount);
+	addresses->SetName("Address");
+	updateTable->AddColumn(addresses);
 
 	std::cout << "rows : " << updateTable->GetNumberOfRows() << ", cols : " << updateTable->GetNumberOfColumns() << std::endl;
 
@@ -364,12 +372,12 @@ BOOL CvtkDoc::QueryData()
 
 		//_tprintf(_T("%s\n"), CString(Address.ToString().c_str()));
 		//if(addressNum != (int)strtol(Address.ToString().c_str(), NULL, 16))
-		if(addressNum != Address.ToInt())
-		{
-			//_tprintf(_T("addressNum error : %d, %s\n"), addressNum, CString(Address.ToString().c_str()));
-			std::cout << "addressNum error : " << addressNum << ", " << Address.ToInt() << std::endl;
-			break;
-		}
+		//if(addressNum != Address.ToInt())
+		//{
+		//	//_tprintf(_T("addressNum error : %d, %s\n"), addressNum, CString(Address.ToString().c_str()));
+		//	std::cout << "addressNum error : " << addressNum << ", " << Address.ToInt() << std::endl;
+		//	break;
+		//}
 
 		//_tprintf(_T("%d "), updateCount);
 		//std::cout << "updates[" << Address << "] : " << updateCount << std::endl;
@@ -377,6 +385,7 @@ BOOL CvtkDoc::QueryData()
 		//updates->SetValue(addressNum, updateCount);
 		updateTable->SetValueByName(addressNum, "Total", updateCount);
 		updateTable->SetValueByName(addressNum, "Section", Section);
+		updateTable->SetValueByName(addressNum, "Address", Address);
 	}
 
 #ifdef CHECK_TIME

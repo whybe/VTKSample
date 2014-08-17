@@ -1,32 +1,31 @@
 #include "stdafx.h"
 #include "vtkUtil.h"
 
-template <typename T>
-void PrintColour(T &rgb)
-{
-	// Don't do this in real code! Range checking etc. is needed.
-	for (size_t i = 0; i < 3; ++i)
-	{
-		if (i < 2)
-		{
-			std::cout << static_cast<double>(rgb[i]) << " ";
-		}
-		else
-		{
-			std::cout << static_cast<double>(rgb[i]);
-		}
-	}
-}
+//template <typename T> void vtkUtil::PrintColour(T &rgb)
+//{
+//	// Don't do this in real code! Range checking etc. is needed.
+//	for (size_t i = 0; i < 3; ++i)
+//	{
+//		if (i < 2)
+//		{
+//			std::cout << static_cast<double>(rgb[i]) << " ";
+//		}
+//		else
+//		{
+//			std::cout << static_cast<double>(rgb[i]);
+//		}
+//	}
+//}
 
 //! Use a color transfer Function to generate the colors in the lookup table.
-void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut, size_t const &arrSize, vtkIntArray *arr)
+void vtkUtil::MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut, size_t const &arrSize, vtkIntArray *arr)
 {
 	vtkSmartPointer<vtkColorTransferFunction> ctf = vtkSmartPointer<vtkColorTransferFunction>::New();
 	ctf->SetColorSpaceToDiverging();
 	// White to Blue.
 	ctf->AddRGBPoint(0.0, 1.000, 1.000, 1.000);
-	//ctf->AddRGBPoint(0.5, 0.500, 0.500, 0.500);
-	ctf->AddRGBPoint(1.0, 0.000, 0.000, 1.000);
+	ctf->AddRGBPoint(0.5, 1.000, 0.500, 0.000);
+	ctf->AddRGBPoint(1.0, 1.000, 0.000, 0.000);
 
 	lut->SetNumberOfTableValues(tableSize);
 	lut->Build();
@@ -54,10 +53,10 @@ void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut, size_t const 
 }
 
 //! Create the cell data using the colors from the lookup table.
-void MakeCellData(size_t const & tableSize, vtkLookupTable *lut,
+void vtkUtil::MakeCellData(size_t const & tableSize, vtkLookupTable *lut,
 	vtkUnsignedCharArray *colors)
 {
-	for (size_t i = 1; i < tableSize; i++)
+	for (size_t i = 0; i < tableSize; i++)
 	{
 		double rgb[3];
 		unsigned char ucrgb[3];
@@ -81,7 +80,17 @@ void MakeCellData(size_t const & tableSize, vtkLookupTable *lut,
 	}
 }
 
-void MakeXYFromLength(int &x, int &y, int &length)
+void vtkUtil::MakeXYFromLength(int &x, int &y, int &length)
 {
 
 }
+
+//template <typename T> std::string vtkUtil::int_to_hex(T i)
+//{
+//	std::stringstream stream;
+//	stream 
+//		<< "0x"
+//		<< std::setfill ('0') << std::setw(sizeof(T)*2) 
+//		<< std::hex << i;
+//	return stream.str();
+//}
