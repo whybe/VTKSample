@@ -75,4 +75,5 @@ protected:
 #endif // SHARED_HANDLERS
 private:
 	BOOL QueryData();
+	void OffScreenRndering();
 };

@@ -18,29 +18,29 @@
 //}
 
 //! Use a color transfer Function to generate the colors in the lookup table.
-void vtkUtil::MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut, size_t const &arrSize, vtkIntArray *arr)
+void vtkUtil::MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut, size_t const &arrSize, vtkIntArray *arr, int minValue, int maxValue)
 {
 	vtkSmartPointer<vtkColorTransferFunction> ctf = vtkSmartPointer<vtkColorTransferFunction>::New();
 	ctf->SetColorSpaceToDiverging();
 	// White to Blue.
 	ctf->AddRGBPoint(0.0, 1.000, 1.000, 1.000);
-	ctf->AddRGBPoint(0.5, 1.000, 0.500, 0.000);
+	ctf->AddRGBPoint(0.5, 1.000, 0.750, 0.000);
 	ctf->AddRGBPoint(1.0, 1.000, 0.000, 0.000);
 
 	lut->SetNumberOfTableValues(tableSize);
 	lut->Build();
 
 	// Get min and max
-	int renge[2];
-	arr->GetValueRange(renge); // Note this is not GetRange()!
-
-	std::cout << "min : " << renge[0] << ", max : " << renge[1] << std::endl;
-
+	//int renge[2];
+	//arr->GetValueRange(renge); // Note this is not GetRange()!
+	//std::cout << "min : " << renge[0] << ", max : " << renge[1] << std::endl;
+	std::cout << "min : " << minValue << ", max : " << maxValue << std::endl;
 
 	for(size_t i = 0; i < arrSize; ++i)
 	{
 		//std::cout << "arr[" << i << "] : " << arr->GetValue(i) << std::endl;
-		double *rgb = ctf->GetColor(static_cast<double>(arr->GetValue(i)-renge[0])/(renge[1]-renge[0]));
+		//double *rgb = ctf->GetColor(static_cast<double>(arr->GetValue(i)-renge[0])/(renge[1]-renge[0]));
+		double *rgb = ctf->GetColor(static_cast<double>(arr->GetValue(i)-minValue)/(maxValue-minValue));
 		lut->SetTableValue(i,rgb);
 	}
 
@@ -65,7 +65,7 @@ void vtkUtil::MakeCellData(size_t const & tableSize, vtkLookupTable *lut,
 		// to get the required color and assign it to a cell Id.
 		// In this case we are just using the cell (Id + 1)/(tableSize - 1)
 		// to get the interpolated color.
-		lut->GetColor(static_cast<double>(i) / (tableSize - 1), rgb);
+		lut->GetColor(static_cast<double>(i) / (tableSize), rgb);
 		for (size_t j = 0; j < 3; ++j)
 		{
 			ucrgb[j] = static_cast<unsigned char>(rgb[j] * 255);

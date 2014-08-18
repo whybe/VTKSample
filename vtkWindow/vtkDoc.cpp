@@ -47,6 +47,8 @@ CvtkDoc::CvtkDoc()
 	//xRes = 64;
 	xRes = 128;
 	yRes = 1;
+
+	OffScreenRndering();
 }
 
 CvtkDoc::~CvtkDoc()
@@ -74,7 +76,7 @@ BOOL CvtkDoc::OnNewDocument()
 #endif
 
 	yRes = addressCount/xRes + 1;
-	int tableSize = xRes*yRes + 1;
+	int tableSize = xRes*yRes;
 
 	vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
 
@@ -86,7 +88,8 @@ BOOL CvtkDoc::OnNewDocument()
 	planeSource->Update();
 
 	//MakeLUTFromCTF(tableSize, lut, addressCount, updates);
-	vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(updateTable->GetColumnByName("Total")));
+	vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(updateTable->GetColumnByName("Total")), 0, frameCount);
+	//vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(updateTable->GetColumnByName("Frame1")), 0, 1);
 
 	vtkSmartPointer<vtkUnsignedCharArray> colorData = 
 		vtkSmartPointer<vtkUnsignedCharArray>::New();
@@ -272,10 +275,21 @@ BOOL CvtkDoc::QueryData()
 		vtkSmartPointer<vtkIntArray> updateds = vtkSmartPointer<vtkIntArray>::New();
 		updateds->SetNumberOfComponents(1);
 		updateds->SetNumberOfValues(addressCount);
-		vtkStdString str = "Frame" + std::to_string((_ULonglong)i);
-		std::cout << str << std::endl;
+		vtkStdString str = "Updated" + std::to_string((_ULonglong)i);
+		//std::cout << str << std::endl;
 		updateds->SetName(str);
 		updateTable->AddColumn(updateds);
+	}
+
+	for (int i = 0; i < frameCount; ++i)
+	{
+		vtkSmartPointer<vtkIntArray> values = vtkSmartPointer<vtkIntArray>::New();
+		values->SetNumberOfComponents(1);
+		values->SetNumberOfValues(addressCount);
+		vtkStdString str = "Value" + std::to_string((_ULonglong)i);
+		//std::cout << str << std::endl;
+		values->SetName(str);
+		updateTable->AddColumn(values);
 	}
 
 	vtkSmartPointer<vtkIntArray> sumOfUpdateds = vtkSmartPointer<vtkIntArray>::New();
@@ -295,10 +309,6 @@ BOOL CvtkDoc::QueryData()
 	addresses->SetNumberOfValues(addressCount);
 	addresses->SetName("Address");
 	updateTable->AddColumn(addresses);
-
-	std::cout << "rows : " << updateTable->GetNumberOfRows() << ", cols : " << updateTable->GetNumberOfColumns() << std::endl;
-
-	std::cout << "size of updateTable : " << updateTable->GetActualMemorySize() << " kb" << std::endl;
 
 	queryStr = 
 		//"select Address, Frame, Value from vtk.dumped_data where LABID = '" + labID + "' order by Address, Frame;";
@@ -330,8 +340,11 @@ BOOL CvtkDoc::QueryData()
 			Address = query->DataValue(0);
 			Frame = query->DataValue(1);
 			Value = query->DataValue(2);
+			vtkStdString valueName = "Value" + std::to_string((_ULonglong)frameNum);
+			updateTable->SetValueByName(addressNum, valueName, Value);
 			Updated = query->DataValue(3);
-			updateTable->SetValue(addressNum, frameNum, Updated.ToInt());
+			vtkStdString updatedName = "Updated" + std::to_string((_ULonglong)frameNum);
+			updateTable->SetValueByName(addressNum, updatedName, Updated.ToInt());
 			Section = query->DataValue(4);
 
 			if (frameNum == 0 && addressNum == 0)
@@ -396,6 +409,11 @@ BOOL CvtkDoc::QueryData()
 		std::cout << "create Table updateTable[" << updateTable->GetNumberOfRows() << "][" << updateTable->GetNumberOfColumns() << "] : " << Time << " ms" << std::endl;
 #endif
 
+	//std::cout << "rows : " << updateTable->GetNumberOfRows() << ", cols : " << updateTable->GetNumberOfColumns() << std::endl;
+
+	std::cout << "size of updateTable : " << updateTable->GetActualMemorySize() << " kb" << std::endl;
+
+
 	//updateTable->Dump();
 
 	//for(int addressNum = 0; addressNum < addressCount; addressNum++)
@@ -405,4 +423,51 @@ BOOL CvtkDoc::QueryData()
 	//}
 
 	return TRUE;
+}
+
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
+#include <vtkWindowToImageFilter.h>
+#include <vtkPNGWriter.h>
+#include <vtkGraphicsFactory.h>
+
+void CvtkDoc::OffScreenRndering()
+{
+	//sphere 1
+    vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+
+    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection(sphereSource->GetOutputPort());
+
+
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+
+    // a renderer and render window
+    vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+    vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+    renderWindow->SetOffScreenRendering(1);
+    renderWindow->AddRenderer(renderer);
+
+    // add the actors to the scene
+    renderer->AddActor(actor);
+    renderer->SetBackground(1, 1, 1); // Background color white
+
+    renderWindow->Render();
+
+    vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
+        vtkSmartPointer<vtkWindowToImageFilter>::New();
+    windowToImageFilter->SetInput(renderWindow);
+    windowToImageFilter->Update();
+
+    vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+    writer->SetFileName("sphere.png");
+    writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+    writer->Write();
+
 }
