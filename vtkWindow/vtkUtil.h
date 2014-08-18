@@ -29,7 +29,7 @@ public:
 		}
 	};
 	//void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut);
-	static void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut, size_t const &arrSize, vtkIntArray *arr);
+	static void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut, size_t const &arrSize, vtkIntArray *arr, int minValue, int maxValue);
 	static void MakeCellData(size_t const & tableSize, vtkLookupTable *lut, vtkUnsignedCharArray *colors);
 	static void MakeXYFromLength(int &x, int &y, int &length);
 

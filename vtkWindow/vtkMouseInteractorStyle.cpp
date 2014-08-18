@@ -66,7 +66,7 @@ void vtkMouseInteractorStyle::OnMouseMove()
 		{
 			props->GetNextProp()->VisibilityOff();
 		}
-		this->GetDefaultRenderer()->GetRenderWindow()->Render();
+		//this->GetDefaultRenderer()->GetRenderWindow()->Render();
 	}
 	else
 	{
@@ -119,8 +119,8 @@ void vtkMouseInteractorStyle::OnMouseMove()
 
 		selectedActor->SetMapper(selectedMapper);
 		selectedActor->GetProperty()->EdgeVisibilityOn();
-		selectedActor->GetProperty()->SetEdgeColor(1,0,0);
-		selectedActor->GetProperty()->SetLineWidth(0.5);
+		selectedActor->GetProperty()->SetEdgeColor(0.0, 0.85, 0.5);
+		selectedActor->GetProperty()->SetLineWidth(1.0);
 
 		selectedActor->VisibilityOn();
 
@@ -139,7 +139,7 @@ void vtkMouseInteractorStyle::OnMouseMove()
 		stream << "Address : " << vtkUtil::int_to_hex<int>(address.ToInt()) << std::endl 
 			<< "Updated : " << updated.ToString();
 		textActor->SetInput(stream.str().c_str());
-		textActor->GetTextProperty()->SetColor(1.0, 0.0, 0.0);
+		textActor->GetTextProperty()->SetColor(0.0, 0.25, 0.6);
 
 		textActor->VisibilityOn();
 
