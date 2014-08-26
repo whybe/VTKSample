@@ -61,3 +61,8 @@ VTK_MODULE_INIT(vtkIOMySQL);
 #ifdef _DEBUG
 #pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
 #endif
+
+
+
+#define WM_THREADDONE WM_APP+1
+#define WM_VTKRENDER WM_APP+2

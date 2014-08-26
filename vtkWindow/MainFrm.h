@@ -43,6 +43,7 @@ protected:
 
 public:
 	afx_msg void OnWindowSubview();
+	afx_msg LRESULT OnThreadDone(WPARAM wParam, LPARAM lParam);
 };
 
 

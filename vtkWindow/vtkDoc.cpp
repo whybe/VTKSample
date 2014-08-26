@@ -11,6 +11,7 @@
 
 #include "vtkDoc.h"
 #include "vtkUtil.h"
+#include "MainFrm.h"
 
 #include <propkey.h>
 
@@ -35,14 +36,22 @@ CvtkDoc::CvtkDoc()
 	errString = _T("");
 
 	//labID = LABID;
-	labName = LABNAME;
+	//labName = LABNAME;
+	SetLabName(LABNAME);
 	addressCount = 0;
 	frameCount = 0;
 
 	//updates = vtkSmartPointer<vtkIntArray>::New();
 	updateTable = vtkSmartPointer<vtkTable>::New();
 	planeSource = vtkSmartPointer<vtkPlaneSource>::New();
-	QueryData();
+
+	//QueryData();
+	if (OpenDB()) {
+		SetAddressCountFromDB();
+		SetFrameCountFromDB();
+		InitializeUpdateTable();
+		StartThread();
+	}
 
 	//xRes = 64;
 	xRes = 128;
@@ -53,6 +62,8 @@ CvtkDoc::CvtkDoc()
 
 CvtkDoc::~CvtkDoc()
 {
+	if (m_pThread)
+		StopThread();
 }
 
 BOOL CvtkDoc::OnNewDocument()
@@ -69,6 +80,13 @@ BOOL CvtkDoc::OnNewDocument()
 		return FALSE;
 	}
 
+	UpdatePlaneSource();
+
+	return TRUE;
+}
+
+void CvtkDoc::UpdatePlaneSource()
+{
 #ifdef CHECK_TIME
 	float Time;
 	BOOL err;
@@ -108,11 +126,7 @@ BOOL CvtkDoc::OnNewDocument()
 	//if(err) _tprintf(_T("create Plane : %8.6f ms\n"), Time);
 	std::cout << "create planeSource[" << xRes << "][" << yRes << "] : " << Time << " ms" << std::endl;
 #endif
-
-	return TRUE;
 }
-
-
 
 
 // CvtkDoc serialization
@@ -197,17 +211,11 @@ void CvtkDoc::Dump(CDumpContext& dc) const
 }
 #endif //_DEBUG
 
-
-
-BOOL CvtkDoc::QueryData()
+BOOL CvtkDoc::OpenDB()
 {
-	// variables
-
 	//mysql db open & get query Instance
-	vtkSmartPointer<vtkMySQLDatabase> db = 
-		vtkSmartPointer<vtkMySQLDatabase>::Take(vtkMySQLDatabase::SafeDownCast(
-			//vtkMySQLDatabase::CreateFromURL("mysql://root:winter09@localhost/vtk")
-			vtkMySQLDatabase::CreateFromURL("mysql://root:winter09@localhost/dumpreceiver")
+	db = vtkSmartPointer<vtkMySQLDatabase>::Take(vtkMySQLDatabase::SafeDownCast(
+		vtkMySQLDatabase::CreateFromURL("mysql://root:winter09@localhost/dumpreceiver")
 		));
 	// url syntax:
 	// mysql://'[[username[':'password]'@']hostname[':'port]]'/'[dbname]
@@ -219,79 +227,44 @@ BOOL CvtkDoc::QueryData()
 		errString = _T("MySQL DB Open Fail");
 		return FALSE;
 	}
-	vtkSmartPointer<vtkSQLQuery> query = vtkSmartPointer<vtkSQLQuery>::Take(db->GetQueryInstance());
+	query = vtkSmartPointer<vtkSQLQuery>::Take(db->GetQueryInstance());
 
-	// labID
-	//vtkStdString labID = LABID;
-	//labID = LABID;
-	//_tprintf(_T("labID : %s\n"), CString(labID));
+	return TRUE;
+}
+
+void CvtkDoc::SetLabName(vtkStdString labName)
+{
+	this->labName = labName;
+
 	std::cout << "labName : " << labName << std::endl;
+}
 
-	// query string variable
-	vtkStdString queryStr;
-
-	// address count
-	//int addressCount;
-	queryStr = 
-		//"select count(*) from vtk.dumped_data where LABID = '" + labID + "' group by Frame";
+void CvtkDoc::SetAddressCountFromDB()
+{
+	vtkStdString queryStr = 
 		"select count(dumpdata.Frame) from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' group by dumpdata.Frame LIMIT 1";
 	query->SetQuery(queryStr);
-	//_tprintf(_T("%s\n"), CString(query->GetQuery()));
 	query->Execute();
 	query->NextRow();
 	addressCount = query->DataValue(0).ToUnsignedInt();
-	//_tprintf(_T("addressCount : %d\n"), addressCount);
-	std::cout << "addressCount : " << addressCount << std::endl;
 
-	// frame count
-	//int frameCount;
-	queryStr = 
-		//"select count(*) from vtk.dumped_data where LABID = '" + labID + "' group by Address";
+	std::cout << "addressCount : " << addressCount << std::endl;
+}
+
+void CvtkDoc::SetFrameCountFromDB()
+{
+	vtkStdString queryStr = 
 		"select count(dumpdata.Address) from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' group by dumpdata.Address LIMIT 1";
 	query->SetQuery(queryStr);
-	//_tprintf(_T("%s\n"), CString(query->GetQuery()));
 	query->Execute();
 	query->NextRow();
 	frameCount = query->DataValue(0).ToUnsignedInt();
-	//_tprintf(_T("frameCount : %d\n"), frameCount);
+
 	std::cout << "frameCount : " << frameCount << std::endl;
+}
 
-#ifdef CHECK_TIME
-	float Time;
-	BOOL err;
-	CHECK_TIME_START;
-#endif
-
-	// generate update array
-	//CArray<int, int> updateArr;
-	//updateArr.SetSize(addressCount);
-	//updates = vtkSmartPointer<vtkIntArray>::New();
-	//updates->SetNumberOfComponents(1);
-	//updates->SetNumberOfValues(addressCount);
-	//updates->SetName("Updates");
-
-	for (int i = 0; i < frameCount; ++i)
-	{
-		vtkSmartPointer<vtkIntArray> updateds = vtkSmartPointer<vtkIntArray>::New();
-		updateds->SetNumberOfComponents(1);
-		updateds->SetNumberOfValues(addressCount);
-		vtkStdString str = "Updated" + std::to_string((_ULonglong)i);
-		//std::cout << str << std::endl;
-		updateds->SetName(str);
-		updateTable->AddColumn(updateds);
-	}
-
-	for (int i = 0; i < frameCount; ++i)
-	{
-		vtkSmartPointer<vtkIntArray> values = vtkSmartPointer<vtkIntArray>::New();
-		values->SetNumberOfComponents(1);
-		values->SetNumberOfValues(addressCount);
-		vtkStdString str = "Value" + std::to_string((_ULonglong)i);
-		//std::cout << str << std::endl;
-		values->SetName(str);
-		updateTable->AddColumn(values);
-	}
-
+void CvtkDoc::InitializeUpdateTable()
+{
 	vtkSmartPointer<vtkIntArray> sumOfUpdateds = vtkSmartPointer<vtkIntArray>::New();
 	sumOfUpdateds->SetNumberOfComponents(1);
 	sumOfUpdateds->SetNumberOfValues(addressCount);
@@ -310,11 +283,22 @@ BOOL CvtkDoc::QueryData()
 	addresses->SetName("Address");
 	updateTable->AddColumn(addresses);
 
-	queryStr = 
-		//"select Address, Frame, Value from vtk.dumped_data where LABID = '" + labID + "' order by Address, Frame;";
-		"select dumpdata.Address, dumpdata.Frame, dumpdata.Value, dumpdata.Updated+0, dumpdata.Section from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' order by Address, Frame";
+	std::cout << "rows : " << updateTable->GetNumberOfRows() << ", cols : " << updateTable->GetNumberOfColumns() << std::endl;
+	std::cout << "size of updateTable : " << updateTable->GetActualMemorySize() << " kb" << std::endl;
+}
+
+void CvtkDoc::SetUpdateTableFromDB()
+{
+#ifdef CHECK_TIME
+	float Time;
+	BOOL err;
+	CHECK_TIME_START;
+#endif
+
+	vtkStdString queryStr = 
+		//"select dumpdata.Address, dumpdata.Frame, dumpdata.Value, dumpdata.Updated+0, dumpdata.Section from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' order by Address, Frame";
+		"select dumpdata.Address, dumpdata.Frame, dumpdata.Updated+0, dumpdata.Section from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' order by Address, Frame";
 	query->SetQuery(queryStr);
-	//_tprintf(_T("%s\n"), CString(query->GetQuery()));
 	query->Execute();
 
 	bool ret;
@@ -322,12 +306,10 @@ BOOL CvtkDoc::QueryData()
 	{
 		vtkVariant Address;
 		vtkVariant Frame;
-		vtkVariant Value;
+		//vtkVariant Value;
 		vtkVariant Updated;
 		vtkVariant Section;
 
-		//int oldValue = -1;
-		//int newValue = -1;
 		int updateCount = 0;
 		for(int frameNum = 0; frameNum < frameCount; frameNum++)
 		{
@@ -339,43 +321,34 @@ BOOL CvtkDoc::QueryData()
 
 			Address = query->DataValue(0);
 			Frame = query->DataValue(1);
-			Value = query->DataValue(2);
-			vtkStdString valueName = "Value" + std::to_string((_ULonglong)frameNum);
-			updateTable->SetValueByName(addressNum, valueName, Value);
-			Updated = query->DataValue(3);
-			vtkStdString updatedName = "Updated" + std::to_string((_ULonglong)frameNum);
-			updateTable->SetValueByName(addressNum, updatedName, Updated.ToInt());
-			Section = query->DataValue(4);
+			Updated = query->DataValue(2);
+			Section = query->DataValue(3);
+
+			//Value = query->DataValue(2);
+			//vtkStdString valueName = "Value" + std::to_string((_ULonglong)frameNum);
+			//updateTable->SetValueByName(addressNum, valueName, Value);
+			//Updated = query->DataValue(3);
+			//vtkStdString updatedName = "Updated" + std::to_string((_ULonglong)frameNum);
+			//updateTable->SetValueByName(addressNum, updatedName, Updated.ToInt());
+			//Section = query->DataValue(4);
 
 			if (frameNum == 0 && addressNum == 0)
 			{
 				std::cout << "type of Address : " << Address.GetTypeAsString() << std::endl;
 				std::cout << "type of Frame : " << Frame.GetTypeAsString() << std::endl;
-				std::cout << "type of Value : " << Value.GetTypeAsString() << std::endl;
+				//std::cout << "type of Value : " << Value.GetTypeAsString() << std::endl;
 				std::cout << "type of Updated : " << Updated.GetTypeAsString() << std::endl;
 				std::cout << "type of Section : " << Section.GetTypeAsString() << std::endl;
 			}
-
-			//if (Updated.IsInt())
-			//	std::cout << "Updated : " << Updated.ToInt() << std::endl;
 
 			updateCount += Updated.ToInt();
 
 			if(frameNum != Frame.ToInt())
 			{
-				//_tprintf(_T("frameNum error : %d, %d\n"), frameNum, Frame.ToInt());
 				std::cout << "frameNum error : " << frameNum << ", " << Frame.ToInt() << std::endl;
 				ret = false;
 				break;
 			}
-
-			//newValue = (int)strtol(Value.ToString().c_str(), NULL, 16);
-			//if(!(oldValue < 0) && oldValue != newValue)
-			//{
-			//	updateCount += 1;
-			//}
-
-			//oldValue = newValue;
 		}
 
 		if(!ret)
@@ -383,18 +356,12 @@ BOOL CvtkDoc::QueryData()
 			break;
 		}
 
-		//_tprintf(_T("%s\n"), CString(Address.ToString().c_str()));
-		//if(addressNum != (int)strtol(Address.ToString().c_str(), NULL, 16))
 		//if(addressNum != Address.ToInt())
 		//{
-		//	//_tprintf(_T("addressNum error : %d, %s\n"), addressNum, CString(Address.ToString().c_str()));
 		//	std::cout << "addressNum error : " << addressNum << ", " << Address.ToInt() << std::endl;
 		//	break;
 		//}
 
-		//_tprintf(_T("%d "), updateCount);
-		//std::cout << "updates[" << Address << "] : " << updateCount << std::endl;
-		//updateArr.SetAt(addressNum, updateCount);
 		//updates->SetValue(addressNum, updateCount);
 		updateTable->SetValueByName(addressNum, "Total", updateCount);
 		updateTable->SetValueByName(addressNum, "Section", Section);
@@ -403,26 +370,58 @@ BOOL CvtkDoc::QueryData()
 
 #ifdef CHECK_TIME
 	CHECK_TIME_END(Time, err);
-	if(err) 
-		//_tprintf(_T("create Array updates[%d] : %8.6f ms\n"), addressCount, Time);
-		//std::cout << "create Array updates[" << addressCount << "] : " << Time << " ms" << std::endl;
-		std::cout << "create Table updateTable[" << updateTable->GetNumberOfRows() << "][" << updateTable->GetNumberOfColumns() << "] : " << Time << " ms" << std::endl;
+	if(err)
+		std::cout << "Create updateTable : " << Time << " ms" << std::endl;
 #endif
 
-	//std::cout << "rows : " << updateTable->GetNumberOfRows() << ", cols : " << updateTable->GetNumberOfColumns() << std::endl;
-
-	std::cout << "size of updateTable : " << updateTable->GetActualMemorySize() << " kb" << std::endl;
-
-
 	//updateTable->Dump();
+}
 
-	//for(int addressNum = 0; addressNum < addressCount; addressNum++)
-	//{
-	//	//_tprintf(_T("%d "), updateArr.GetAt(addressNum));
-	//	_tprintf(_T("%d "), updates->GetValue(addressNum));
-	//}
+UINT CvtkDoc::ThreadFunc(LPVOID pThreadParam)
+{
+	THREADPARAM *pParam = (THREADPARAM *)pThreadParam;
 
-	return TRUE;
+	CvtkDoc *pCvtkDoc = (CvtkDoc *)pParam->pWnd;
+	delete pParam;
+
+	// TODO
+	pCvtkDoc->SetUpdateTableFromDB();
+
+	CMDIFrameWnd * pFrame = (CMDIFrameWnd*)AfxGetApp()->m_pMainWnd;
+	ASSERT(pFrame);
+
+	pFrame->PostMessage(WM_THREADDONE, 0, 0);
+	std::cout << "PostMessage(WM_THREADDONE)" << std::endl;
+
+	//LRESULT ret;
+	//ret = pFrame->SendMessage(WM_THREADDONE, 0, 0);
+	//std::cout << "SendMessage(WM_THREADDONE) : " << ret << std::endl;
+	
+	//ret = pView->SendMessage(WM_VTKRENDER, 0, 0);
+	//std::cout << "SendMessage(WM_THREADDONE) : " << ret << std::endl;
+
+	//AfxEndThread(0);
+	return 0;
+}
+
+void CvtkDoc::StartThread()
+{
+	THREADPARAM *pThreadParam = new THREADPARAM;
+	pThreadParam->pWnd = (CWnd *)this;
+
+	m_pThread = AfxBeginThread(ThreadFunc, pThreadParam);
+}
+
+void CvtkDoc::StopThread()
+{
+	Sleep(100);
+
+	if (::WaitForSingleObject(m_pThread->m_hThread, INFINITE))
+	{
+		m_pThread = NULL;
+
+		// TODO
+	}
 }
 
 #include <vtkPolyDataMapper.h>
@@ -438,6 +437,11 @@ BOOL CvtkDoc::QueryData()
 
 void CvtkDoc::OffScreenRndering()
 {
+#ifdef CHECK_TIME
+	float Time;
+	BOOL err;
+	CHECK_TIME_START;
+#endif
 	//sphere 1
     vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
 
@@ -458,6 +462,12 @@ void CvtkDoc::OffScreenRndering()
     renderer->AddActor(actor);
     renderer->SetBackground(1, 1, 1); // Background color white
 
+	renderer->ResetCamera();
+
+	vtkCamera *camera = renderer->GetActiveCamera();
+	camera->ParallelProjectionOn();
+	camera->SetParallelScale(0.5);
+
     renderWindow->Render();
 
     vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
@@ -470,4 +480,239 @@ void CvtkDoc::OffScreenRndering()
     writer->SetInputConnection(windowToImageFilter->GetOutputPort());
     writer->Write();
 
+#ifdef CHECK_TIME
+	CHECK_TIME_END(Time, err);
+	if(err)
+		std::cout << "OffScreenRndering : " << Time << " ms" << std::endl;
+#endif
 }
+
+//BOOL CvtkDoc::QueryData()
+//{
+//	// variables
+//
+//	//mysql db open & get query Instance
+//	vtkSmartPointer<vtkMySQLDatabase> db = 
+//		vtkSmartPointer<vtkMySQLDatabase>::Take(vtkMySQLDatabase::SafeDownCast(
+//			//vtkMySQLDatabase::CreateFromURL("mysql://root:winter09@localhost/vtk")
+//			vtkMySQLDatabase::CreateFromURL("mysql://root:winter09@localhost/dumpreceiver")
+//		));
+//	// url syntax:
+//	// mysql://'[[username[':'password]'@']hostname[':'port]]'/'[dbname]
+//	bool status = db->Open();
+//	//std::cout << "Database open? " << status << std::endl;
+//	if(!status)
+//	{
+//		errStatus = FALSE;
+//		errString = _T("MySQL DB Open Fail");
+//		return FALSE;
+//	}
+//	vtkSmartPointer<vtkSQLQuery> query = vtkSmartPointer<vtkSQLQuery>::Take(db->GetQueryInstance());
+//
+//	// labID
+//	//vtkStdString labID = LABID;
+//	//labID = LABID;
+//	//_tprintf(_T("labID : %s\n"), CString(labID));
+//	std::cout << "labName : " << labName << std::endl;
+//
+//	// query string variable
+//	vtkStdString queryStr;
+//
+//	// address count
+//	//int addressCount;
+//	queryStr = 
+//		//"select count(*) from vtk.dumped_data where LABID = '" + labID + "' group by Frame";
+//		"select count(dumpdata.Frame) from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' group by dumpdata.Frame LIMIT 1";
+//	query->SetQuery(queryStr);
+//	//_tprintf(_T("%s\n"), CString(query->GetQuery()));
+//	query->Execute();
+//	query->NextRow();
+//	addressCount = query->DataValue(0).ToUnsignedInt();
+//	//_tprintf(_T("addressCount : %d\n"), addressCount);
+//	std::cout << "addressCount : " << addressCount << std::endl;
+//
+//	// frame count
+//	//int frameCount;
+//	queryStr = 
+//		//"select count(*) from vtk.dumped_data where LABID = '" + labID + "' group by Address";
+//		"select count(dumpdata.Address) from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' group by dumpdata.Address LIMIT 1";
+//	query->SetQuery(queryStr);
+//	//_tprintf(_T("%s\n"), CString(query->GetQuery()));
+//	query->Execute();
+//	query->NextRow();
+//	frameCount = query->DataValue(0).ToUnsignedInt();
+//	//_tprintf(_T("frameCount : %d\n"), frameCount);
+//	std::cout << "frameCount : " << frameCount << std::endl;
+//
+//#ifdef CHECK_TIME
+//	float Time;
+//	BOOL err;
+//	CHECK_TIME_START;
+//#endif
+//
+//	// generate update array
+//	//CArray<int, int> updateArr;
+//	//updateArr.SetSize(addressCount);
+//	//updates = vtkSmartPointer<vtkIntArray>::New();
+//	//updates->SetNumberOfComponents(1);
+//	//updates->SetNumberOfValues(addressCount);
+//	//updates->SetName("Updates");
+//
+//	//for (int i = 0; i < frameCount; ++i)
+//	//{
+//	//	vtkSmartPointer<vtkIntArray> updateds = vtkSmartPointer<vtkIntArray>::New();
+//	//	updateds->SetNumberOfComponents(1);
+//	//	updateds->SetNumberOfValues(addressCount);
+//	//	vtkStdString str = "Updated" + std::to_string((_ULonglong)i);
+//	//	//std::cout << str << std::endl;
+//	//	updateds->SetName(str);
+//	//	updateTable->AddColumn(updateds);
+//	//}
+//
+//	//for (int i = 0; i < frameCount; ++i)
+//	//{
+//	//	vtkSmartPointer<vtkIntArray> values = vtkSmartPointer<vtkIntArray>::New();
+//	//	values->SetNumberOfComponents(1);
+//	//	values->SetNumberOfValues(addressCount);
+//	//	vtkStdString str = "Value" + std::to_string((_ULonglong)i);
+//	//	//std::cout << str << std::endl;
+//	//	values->SetName(str);
+//	//	updateTable->AddColumn(values);
+//	//}
+//
+//	vtkSmartPointer<vtkIntArray> sumOfUpdateds = vtkSmartPointer<vtkIntArray>::New();
+//	sumOfUpdateds->SetNumberOfComponents(1);
+//	sumOfUpdateds->SetNumberOfValues(addressCount);
+//	sumOfUpdateds->SetName("Total");
+//	updateTable->AddColumn(sumOfUpdateds);
+//
+//	vtkSmartPointer<vtkIntArray> sections = vtkSmartPointer<vtkIntArray>::New();
+//	sections->SetNumberOfComponents(1);
+//	sections->SetNumberOfValues(addressCount);
+//	sections->SetName("Section");
+//	updateTable->AddColumn(sections);
+//	
+//	vtkSmartPointer<vtkIntArray> addresses = vtkSmartPointer<vtkIntArray>::New();
+//	addresses->SetNumberOfComponents(1);
+//	addresses->SetNumberOfValues(addressCount);
+//	addresses->SetName("Address");
+//	updateTable->AddColumn(addresses);
+//
+//	queryStr = 
+//		//"select Address, Frame, Value from vtk.dumped_data where LABID = '" + labID + "' order by Address, Frame;";
+//		//"select dumpdata.Address, dumpdata.Frame, dumpdata.Value, dumpdata.Updated+0, dumpdata.Section from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' order by Address, Frame";
+//		"select dumpdata.Address, dumpdata.Frame, dumpdata.Updated+0, dumpdata.Section from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' order by Address, Frame";
+//	query->SetQuery(queryStr);
+//	//_tprintf(_T("%s\n"), CString(query->GetQuery()));
+//	query->Execute();
+//
+//	bool ret;
+//	for(int addressNum = 0; addressNum < addressCount; addressNum++)
+//	{
+//		vtkVariant Address;
+//		vtkVariant Frame;
+//		//vtkVariant Value;
+//		vtkVariant Updated;
+//		vtkVariant Section;
+//
+//		//int oldValue = -1;
+//		//int newValue = -1;
+//		int updateCount = 0;
+//		for(int frameNum = 0; frameNum < frameCount; frameNum++)
+//		{
+//			ret = query->NextRow();
+//			if(!ret)
+//			{
+//				break;
+//			}
+//
+//			Address = query->DataValue(0);
+//			Frame = query->DataValue(1);
+//			Updated = query->DataValue(2);
+//			Section = query->DataValue(3);
+//
+//			//Value = query->DataValue(2);
+//			//vtkStdString valueName = "Value" + std::to_string((_ULonglong)frameNum);
+//			//updateTable->SetValueByName(addressNum, valueName, Value);
+//			//Updated = query->DataValue(3);
+//			//vtkStdString updatedName = "Updated" + std::to_string((_ULonglong)frameNum);
+//			//updateTable->SetValueByName(addressNum, updatedName, Updated.ToInt());
+//			//Section = query->DataValue(4);
+//
+//			if (frameNum == 0 && addressNum == 0)
+//			{
+//				std::cout << "type of Address : " << Address.GetTypeAsString() << std::endl;
+//				std::cout << "type of Frame : " << Frame.GetTypeAsString() << std::endl;
+//				//std::cout << "type of Value : " << Value.GetTypeAsString() << std::endl;
+//				std::cout << "type of Updated : " << Updated.GetTypeAsString() << std::endl;
+//				std::cout << "type of Section : " << Section.GetTypeAsString() << std::endl;
+//			}
+//
+//			//if (Updated.IsInt())
+//			//	std::cout << "Updated : " << Updated.ToInt() << std::endl;
+//
+//			updateCount += Updated.ToInt();
+//
+//			if(frameNum != Frame.ToInt())
+//			{
+//				//_tprintf(_T("frameNum error : %d, %d\n"), frameNum, Frame.ToInt());
+//				std::cout << "frameNum error : " << frameNum << ", " << Frame.ToInt() << std::endl;
+//				ret = false;
+//				break;
+//			}
+//
+//			//newValue = (int)strtol(Value.ToString().c_str(), NULL, 16);
+//			//if(!(oldValue < 0) && oldValue != newValue)
+//			//{
+//			//	updateCount += 1;
+//			//}
+//
+//			//oldValue = newValue;
+//		}
+//
+//		if(!ret)
+//		{
+//			break;
+//		}
+//
+//		//_tprintf(_T("%s\n"), CString(Address.ToString().c_str()));
+//		//if(addressNum != (int)strtol(Address.ToString().c_str(), NULL, 16))
+//		//if(addressNum != Address.ToInt())
+//		//{
+//		//	//_tprintf(_T("addressNum error : %d, %s\n"), addressNum, CString(Address.ToString().c_str()));
+//		//	std::cout << "addressNum error : " << addressNum << ", " << Address.ToInt() << std::endl;
+//		//	break;
+//		//}
+//
+//		//_tprintf(_T("%d "), updateCount);
+//		//std::cout << "updates[" << Address << "] : " << updateCount << std::endl;
+//		//updateArr.SetAt(addressNum, updateCount);
+//		//updates->SetValue(addressNum, updateCount);
+//		updateTable->SetValueByName(addressNum, "Total", updateCount);
+//		updateTable->SetValueByName(addressNum, "Section", Section);
+//		updateTable->SetValueByName(addressNum, "Address", Address);
+//	}
+//
+//#ifdef CHECK_TIME
+//	CHECK_TIME_END(Time, err);
+//	if(err) 
+//		//_tprintf(_T("create Array updates[%d] : %8.6f ms\n"), addressCount, Time);
+//		//std::cout << "create Array updates[" << addressCount << "] : " << Time << " ms" << std::endl;
+//		std::cout << "create Table updateTable[" << updateTable->GetNumberOfRows() << "][" << updateTable->GetNumberOfColumns() << "] : " << Time << " ms" << std::endl;
+//#endif
+//
+//	//std::cout << "rows : " << updateTable->GetNumberOfRows() << ", cols : " << updateTable->GetNumberOfColumns() << std::endl;
+//
+//	std::cout << "size of updateTable : " << updateTable->GetActualMemorySize() << " kb" << std::endl;
+//
+//
+//	//updateTable->Dump();
+//
+//	//for(int addressNum = 0; addressNum < addressCount; addressNum++)
+//	//{
+//	//	//_tprintf(_T("%d "), updateArr.GetAt(addressNum));
+//	//	_tprintf(_T("%d "), updates->GetValue(addressNum));
+//	//}
+//
+//	return TRUE;
+//}

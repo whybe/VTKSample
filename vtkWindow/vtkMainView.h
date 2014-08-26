@@ -13,6 +13,7 @@
 #include <vtkActor.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkNamedColors.h>
+#include <vtkCamera.h>
 
 class CvtkMainView : public CView
 {

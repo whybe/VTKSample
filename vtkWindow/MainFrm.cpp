@@ -20,6 +20,7 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
 	ON_COMMAND(ID_WINDOW_SUBVIEW, &CMainFrame::OnWindowSubview)
+	ON_MESSAGE(WM_THREADDONE, &CMainFrame::OnThreadDone)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -138,4 +139,13 @@ void CMainFrame::OnWindowSubview()
 		frame->InitialUpdateFrame(doc, TRUE);
 	} /* frame created */
 
+}
+
+
+LRESULT CMainFrame::OnThreadDone(WPARAM wParam, LPARAM lParam)
+{
+	CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
+	doc->UpdatePlaneSource();
+	doc->UpdateAllViews(NULL);
+	return TRUE;
 }

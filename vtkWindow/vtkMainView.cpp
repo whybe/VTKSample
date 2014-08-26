@@ -110,6 +110,7 @@ void CvtkMainView::OnInitialUpdate()
 	MFCWindow->GetRenderWindow()->SetNumberOfLayers(2);
 	MFCWindow->GetRenderWindow()->AddRenderer(renderer);
 	MFCWindow->GetRenderWindow()->AddRenderer(selectedRenderer);
+	//MFCWindow->GetRenderWindow()->SetSize(500,500);
 
 	mouseInteractorStyle->selectedRenderer = selectedRenderer;
 	mouseInteractorStyle->SetDefaultRenderer(renderer);
@@ -121,6 +122,19 @@ void CvtkMainView::OnInitialUpdate()
 	//renderer->ResetCamera();
 	renderer->SetBackground(
 		namedColors->GetColor3d("white_smoke").GetData());
+
+	renderer->ResetCamera();
+	vtkCamera *camera = renderer->GetActiveCamera();
+	camera->ParallelProjectionOn();
+	//vtkSmartPointer<vtkInteractorStyleTrackballCamera> style = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+	//double MotionFactor = style->GetMotionFactor();
+	//double MouseWheelMotionFactor = style->GetMouseWheelMotionFactor();
+	//double factor = MotionFactor * 0.2 * MouseWheelMotionFactor;
+	//factor = pow(1.1, factor);
+	//camera->SetParallelScale(camera->GetParallelScale() / factor / factor);
+	camera->SetParallelScale(0.5);
+	//camera->SetParallelScale(0.482963);
+	std::cout << "parallel scale : " << camera->GetParallelScale() << std::endl;
 
 	if(NULL != GetDocument()->planeSource)
 	{
@@ -137,7 +151,6 @@ void CvtkMainView::OnInitialUpdate()
 		renderer->AddActor(actor);
 	}
 }
-
 
 BOOL CvtkMainView::OnEraseBkgnd(CDC* pDC)
 {
