@@ -390,7 +390,8 @@ UINT CvtkDoc::ThreadFunc(LPVOID pThreadParam)
 	CMDIFrameWnd * pFrame = (CMDIFrameWnd*)AfxGetApp()->m_pMainWnd;
 	ASSERT(pFrame);
 
-	pFrame->PostMessage(WM_THREADDONE, 0, 0);
+	//pFrame->PostMessage(WM_THREADDONE, 0, 0);
+	pFrame->PostMessage(WM_THREADDONE, 0, (LPARAM)pCvtkDoc);
 	std::cout << "PostMessage(WM_THREADDONE)" << std::endl;
 
 	//LRESULT ret;

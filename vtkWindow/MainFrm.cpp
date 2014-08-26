@@ -141,11 +141,14 @@ void CMainFrame::OnWindowSubview()
 
 }
 
-
 LRESULT CMainFrame::OnThreadDone(WPARAM wParam, LPARAM lParam)
 {
-	CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
+	//CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
+	CvtkDoc *doc = (CvtkDoc *)lParam;
 	doc->UpdatePlaneSource();
 	doc->UpdateAllViews(NULL);
+
+	std::cout << "UpdatePlaneSource" << std::endl;
+
 	return TRUE;
 }
