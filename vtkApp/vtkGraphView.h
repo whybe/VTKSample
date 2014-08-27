@@ -1,5 +1,5 @@
 
-// CvtkSubView.h : CvtkSubView 클래스의 인터페이스
+// CvtkGraphView.h : CvtkGraphView 클래스의 인터페이스
 //
 
 #pragma once
@@ -14,14 +14,16 @@
 #include <vtkActor.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
-#include "vtkMouseInteractorStyle.h"
+//#include "vtkMouseInteractorStyle.h"
 
-class CvtkSubView : public CView
+class vtkMouseInteractorStyle;
+
+class CvtkGraphView : public CView
 {
 public:
-	CvtkSubView();
+	CvtkGraphView();
 protected: // serialization에서만 만들어집니다.
-	DECLARE_DYNCREATE(CvtkSubView)
+	DECLARE_DYNCREATE(CvtkGraphView)
 
 // 특성입니다.
 public:
@@ -52,7 +54,7 @@ protected:
 
 // 구현입니다.
 public:
-	virtual ~CvtkSubView();
+	virtual ~CvtkGraphView();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -69,8 +71,8 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 };
 
-#ifndef _DEBUG  // vtkWindowView.cpp의 디버그 버전
-inline CvtkDoc* CvtkSubView::GetDocument() const
+#ifndef _DEBUG  // vtkAppView.cpp의 디버그 버전
+inline CvtkDoc* CvtkGraphView::GetDocument() const
    { return reinterpret_cast<CvtkDoc*>(m_pDocument); }
 #endif
 

@@ -1,5 +1,5 @@
 
-// CvtkMainView.cpp : CvtkMainView 클래스의 구현
+// CvtkPlaneView.cpp : CvtkPlaneView 클래스의 구현
 //
 
 #include "stdafx.h"
@@ -10,26 +10,26 @@
 #endif
 
 #include "vtkDoc.h"
-#include "vtkMainView.h"
-//#include "vtkMouseInteractorStyle.h"
+#include "vtkPlaneView.h"
+#include "vtkMouseInteractorStyle.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 
-// CvtkMainView
+// CvtkPlaneView
 
-IMPLEMENT_DYNCREATE(CvtkMainView, CView)
+IMPLEMENT_DYNCREATE(CvtkPlaneView, CView)
 
-BEGIN_MESSAGE_MAP(CvtkMainView, CView)
+BEGIN_MESSAGE_MAP(CvtkPlaneView, CView)
 	ON_WM_ERASEBKGND()
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
-// CvtkMainView 생성/소멸
+// CvtkPlaneView 생성/소멸
 
-CvtkMainView::CvtkMainView()
+CvtkPlaneView::CvtkPlaneView()
 {
 	// TODO: 여기에 생성 코드를 추가합니다.
 
@@ -44,13 +44,13 @@ CvtkMainView::CvtkMainView()
 	namedColors = vtkSmartPointer<vtkNamedColors>::New();
 }
 
-CvtkMainView::~CvtkMainView()
+CvtkPlaneView::~CvtkPlaneView()
 {
 	if(NULL != MFCWindow)
 		delete MFCWindow;
 }
 
-BOOL CvtkMainView::PreCreateWindow(CREATESTRUCT& cs)
+BOOL CvtkPlaneView::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: CREATESTRUCT cs를 수정하여 여기에서
 	//  Window 클래스 또는 스타일을 수정합니다.
@@ -58,9 +58,9 @@ BOOL CvtkMainView::PreCreateWindow(CREATESTRUCT& cs)
 	return CView::PreCreateWindow(cs);
 }
 
-// CvtkMainView 그리기
+// CvtkPlaneView 그리기
 
-void CvtkMainView::OnDraw(CDC* pDC)
+void CvtkPlaneView::OnDraw(CDC* pDC)
 {
 	CvtkDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
@@ -73,20 +73,20 @@ void CvtkMainView::OnDraw(CDC* pDC)
 }
 
 
-// CvtkMainView 진단
+// CvtkPlaneView 진단
 
 #ifdef _DEBUG
-void CvtkMainView::AssertValid() const
+void CvtkPlaneView::AssertValid() const
 {
 	CView::AssertValid();
 }
 
-void CvtkMainView::Dump(CDumpContext& dc) const
+void CvtkPlaneView::Dump(CDumpContext& dc) const
 {
 	CView::Dump(dc);
 }
 
-CvtkDoc* CvtkMainView::GetDocument() const // 디버그되지 않은 버전은 인라인으로 지정됩니다.
+CvtkDoc* CvtkPlaneView::GetDocument() const // 디버그되지 않은 버전은 인라인으로 지정됩니다.
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CvtkDoc)));
 	return (CvtkDoc*)m_pDocument;
@@ -94,10 +94,10 @@ CvtkDoc* CvtkMainView::GetDocument() const // 디버그되지 않은 버전은 인라인으로 
 #endif //_DEBUG
 
 
-// CvtkMainView 메시지 처리기
+// CvtkPlaneView 메시지 처리기
 
 
-void CvtkMainView::OnInitialUpdate()
+void CvtkPlaneView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
 
@@ -152,7 +152,7 @@ void CvtkMainView::OnInitialUpdate()
 	}
 }
 
-BOOL CvtkMainView::OnEraseBkgnd(CDC* pDC)
+BOOL CvtkPlaneView::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	return TRUE;
@@ -160,7 +160,7 @@ BOOL CvtkMainView::OnEraseBkgnd(CDC* pDC)
 }
 
 
-void CvtkMainView::OnSize(UINT nType, int cx, int cy)
+void CvtkPlaneView::OnSize(UINT nType, int cx, int cy)
 {
 	CView::OnSize(nType, cx, cy);
 

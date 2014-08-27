@@ -1,5 +1,5 @@
 
-// vtkWindow.cpp : 응용 프로그램에 대한 클래스 동작을 정의합니다.
+// vtkApp.cpp : 응용 프로그램에 대한 클래스 동작을 정의합니다.
 //
 
 #include "stdafx.h"
@@ -10,8 +10,8 @@
 
 #include "ChildFrm.h"
 #include "vtkDoc.h"
-#include "vtkMainView.h"
-#include "vtkSubView.h"
+#include "vtkPlaneView.h"
+#include "vtkGraphView.h"
 
 //#include <AFXPRIV.H>
 
@@ -38,7 +38,7 @@ CvtkApp::CvtkApp()
 {
 	// TODO: 아래 응용 프로그램 ID 문자열을 고유 ID 문자열로 바꾸십시오(권장).
 	// 문자열에 대한 서식: CompanyName.ProductName.SubProduct.VersionInformation
-	SetAppID(_T("vtkWindow.AppID.NoVersion"));
+	SetAppID(_T("vtkApp.AppID.NoVersion"));
 
 	// TODO: 여기에 생성 코드를 추가합니다.
 	// InitInstance에 모든 중요한 초기화 작업을 배치합니다.
@@ -75,10 +75,10 @@ BOOL CvtkApp::InitInstance()
 	// 응용 프로그램의 문서 템플릿을 등록합니다. 문서 템플릿은
 	//  문서, 프레임 창 및 뷰 사이의 연결 역할을 합니다.
 	CMultiDocTemplate* pDocTemplate;
-	pDocTemplate = new CMultiDocTemplate(IDR_VTKMAINVIEW,
+	pDocTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
 		RUNTIME_CLASS(CvtkDoc),
 		RUNTIME_CLASS(CChildFrame), // 사용자 지정 MDI 자식 프레임입니다.
-		RUNTIME_CLASS(CvtkMainView));
+		RUNTIME_CLASS(CvtkPlaneView));
 	if (!pDocTemplate)
 		return FALSE;
 	AddDocTemplate(pDocTemplate);
@@ -108,7 +108,7 @@ BOOL CvtkApp::InitInstance()
 
 	//CView* pActiveView = ((CFrameWnd*) m_pMainWnd)->GetActiveView();
 	//m_pOldView = pActiveView;
-	//m_pNewView = (CView*) new CvtkSubView;
+	//m_pNewView = (CView*) new CvtkGraphView;
 	//if (NULL == m_pNewView)
 	//	return FALSE;
 

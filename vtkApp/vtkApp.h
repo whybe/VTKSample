@@ -1,5 +1,5 @@
 
-// CvtkApp.h : vtkWindow 응용 프로그램에 대한 주 헤더 파일
+// CvtkApp.h : vtkApp 응용 프로그램에 대한 주 헤더 파일
 //
 #pragma once
 
@@ -11,7 +11,7 @@
 
 
 // CvtkApp:
-// 이 클래스의 구현에 대해서는 vtkWindow.cpp을 참조하십시오.
+// 이 클래스의 구현에 대해서는 vtkApp.cpp을 참조하십시오.
 //
 
 class CvtkApp : public CWinApp

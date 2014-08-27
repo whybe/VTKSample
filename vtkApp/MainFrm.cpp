@@ -5,7 +5,8 @@
 #include "stdafx.h"
 #include "vtkApp.h"
 #include "vtkDoc.h"
-#include "vtkSubView.h"
+#include "vtkGraphView.h"
+#include "vtkListView.h"
 #include "ChildFrm.h"
 #include "MainFrm.h"
 
@@ -19,7 +20,7 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
-	ON_COMMAND(ID_WINDOW_SUBVIEW, &CMainFrame::OnWindowSubview)
+	ON_COMMAND(ID_VTK_GRAPH, &CMainFrame::OnvtkGraph)
 	ON_MESSAGE(WM_THREADDONE, &CMainFrame::OnThreadDone)
 END_MESSAGE_MAP()
 
@@ -36,12 +37,14 @@ static UINT indicators[] =
 CMainFrame::CMainFrame()
 {
 	// TODO: 여기에 멤버 초기화 코드를 추가합니다.
-	SubViewTemplate = NULL;
+	GraphViewTemplate = NULL;
+	ListViewTemplate = NULL;
 }
 
 CMainFrame::~CMainFrame()
 {
-	delete SubViewTemplate;
+	delete GraphViewTemplate;
+	delete ListViewTemplate;
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -115,16 +118,16 @@ CDocument * CMainFrame::GetCurrentDocument()
 	return doc;
 } // CMainFrame::GetCurrentDocument
 
-void CMainFrame::OnWindowSubview()
+void CMainFrame::OnvtkGraph()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	if(SubViewTemplate == NULL)
-		SubViewTemplate = new CMultiDocTemplate(IDR_VTKSUBVIEW,
+	if(GraphViewTemplate == NULL)
+		GraphViewTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
 		RUNTIME_CLASS(CvtkDoc),
 		RUNTIME_CLASS(CChildFrame),
-		RUNTIME_CLASS(CvtkSubView));
-	ASSERT(SubViewTemplate != NULL);
-	if(SubViewTemplate == NULL)
+		RUNTIME_CLASS(CvtkGraphView));
+	ASSERT(GraphViewTemplate != NULL);
+	if(GraphViewTemplate == NULL)
 		return; // internal error should not occur
 
 	CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
@@ -132,23 +135,27 @@ void CMainFrame::OnWindowSubview()
 	if(doc == NULL)
 		return; // should not be possible
 
-	CFrameWnd * frame = SubViewTemplate->CreateNewFrame(doc, NULL);
+	CFrameWnd * frame = GraphViewTemplate->CreateNewFrame(doc, NULL);
 	ASSERT(frame != NULL);
 	if(frame != NULL)
 	{ /* frame created */
 		frame->InitialUpdateFrame(doc, TRUE);
 	} /* frame created */
-
 }
 
 LRESULT CMainFrame::OnThreadDone(WPARAM wParam, LPARAM lParam)
 {
 	//CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
 	CvtkDoc *doc = (CvtkDoc *)lParam;
+	ASSERT(doc != NULL);
+	if(doc->m_bDo != TRUE)
+	{
+		std::cout << "Thread Force Terminate" << std::endl;
+		return FALSE;
+	}
+
 	doc->UpdatePlaneSource();
 	doc->UpdateAllViews(NULL);
-
 	std::cout << "UpdatePlaneSource" << std::endl;
-
 	return TRUE;
 }

@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F5669416-4335-4DBE-8E93-206FA119E8FD}</ProjectGuid>
+    <ProjectGuid>{FFF7C2AB-B586-461D-A0FE-6D4F890C6BFB}</ProjectGuid>
     <RootNamespace>CvtkApp</RootNamespace>
     <Keyword>MFCProj</Keyword>
     <ProjectName>CvtkApp</ProjectName>
@@ -102,13 +102,14 @@
     <None Include="ReadMe.txt" />
     <None Include="res\idr_vtkm.ico" />
     <None Include="res\Toolbar.bmp" />
-    <None Include="res\vtkWindow.ico" />
-    <None Include="res\vtkWindow.rc2" />
-    <None Include="res\vtkWindowDoc.ico" />
+    <None Include="res\vtkApp.ico" />
+    <None Include="res\vtkApp.rc2" />
+    <None Include="res\vtkAppDoc.ico" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChildFrm.h" />
-    <ClInclude Include="vtkSubView.h" />
+    <ClInclude Include="vtkListView.h" />
+    <ClInclude Include="vtkGraphView.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="vtkMouseInteractorStyle.h" />
     <ClInclude Include="Resource.h" />
@@ -117,11 +118,12 @@
     <ClInclude Include="vtkUtil.h" />
     <ClInclude Include="vtkApp.h" />
     <ClInclude Include="vtkDoc.h" />
-    <ClInclude Include="vtkMainView.h" />
+    <ClInclude Include="vtkPlaneView.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChildFrm.cpp" />
-    <ClCompile Include="vtkSubView.cpp" />
+    <ClCompile Include="vtkListView.cpp" />
+    <ClCompile Include="vtkGraphView.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="vtkMouseInteractorStyle.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -131,10 +133,10 @@
     <ClCompile Include="vtkUtil.cpp" />
     <ClCompile Include="vtkApp.cpp" />
     <ClCompile Include="vtkDoc.cpp" />
-    <ClCompile Include="vtkMainView.cpp" />
+    <ClCompile Include="vtkPlaneView.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="vtkWindow.rc" />
+    <ResourceCompile Include="vtkApp.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -52,6 +52,7 @@ public:
 	int xRes;
 	int yRes;
 
+	bool m_bDo;
 	CWinThread *m_pThread;
 
 // 작업입니다.

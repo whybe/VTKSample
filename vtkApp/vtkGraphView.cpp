@@ -1,5 +1,5 @@
 
-// CvtkSubView.cpp : CvtkSubView 클래스의 구현
+// CvtkGraphView.cpp : CvtkGraphView 클래스의 구현
 //
 
 #include "stdafx.h"
@@ -10,26 +10,26 @@
 #endif
 
 #include "vtkDoc.h"
-#include "vtkSubView.h"
-//#include "vtkMouseInteractorStyle.h"
+#include "vtkGraphView.h"
+#include "vtkMouseInteractorStyle.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 
-// CvtkSubView
+// CvtkGraphView
 
-IMPLEMENT_DYNCREATE(CvtkSubView, CView)
+IMPLEMENT_DYNCREATE(CvtkGraphView, CView)
 
-BEGIN_MESSAGE_MAP(CvtkSubView, CView)
+BEGIN_MESSAGE_MAP(CvtkGraphView, CView)
 	ON_WM_ERASEBKGND()
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
-// CvtkSubView 생성/소멸
+// CvtkGraphView 생성/소멸
 
-CvtkSubView::CvtkSubView()
+CvtkGraphView::CvtkGraphView()
 {
 	// TODO: 여기에 생성 코드를 추가합니다.
 
@@ -46,13 +46,13 @@ CvtkSubView::CvtkSubView()
 	style = vtkSmartPointer<vtkMouseInteractorStyle>::New();
 }
 
-CvtkSubView::~CvtkSubView()
+CvtkGraphView::~CvtkGraphView()
 {
 	if(NULL != MFCWindow)
 		delete MFCWindow;
 }
 
-BOOL CvtkSubView::PreCreateWindow(CREATESTRUCT& cs)
+BOOL CvtkGraphView::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: CREATESTRUCT cs를 수정하여 여기에서
 	//  Window 클래스 또는 스타일을 수정합니다.
@@ -60,9 +60,9 @@ BOOL CvtkSubView::PreCreateWindow(CREATESTRUCT& cs)
 	return CView::PreCreateWindow(cs);
 }
 
-// CvtkSubView 그리기
+// CvtkGraphView 그리기
 
-void CvtkSubView::OnDraw(CDC* pDC)
+void CvtkGraphView::OnDraw(CDC* pDC)
 {
 	CvtkDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
@@ -75,20 +75,20 @@ void CvtkSubView::OnDraw(CDC* pDC)
 }
 
 
-// CvtkSubView 진단
+// CvtkGraphView 진단
 
 #ifdef _DEBUG
-void CvtkSubView::AssertValid() const
+void CvtkGraphView::AssertValid() const
 {
 	CView::AssertValid();
 }
 
-void CvtkSubView::Dump(CDumpContext& dc) const
+void CvtkGraphView::Dump(CDumpContext& dc) const
 {
 	CView::Dump(dc);
 }
 
-CvtkDoc* CvtkSubView::GetDocument() const // 디버그되지 않은 버전은 인라인으로 지정됩니다.
+CvtkDoc* CvtkGraphView::GetDocument() const // 디버그되지 않은 버전은 인라인으로 지정됩니다.
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CvtkDoc)));
 	return (CvtkDoc*)m_pDocument;
@@ -96,10 +96,10 @@ CvtkDoc* CvtkSubView::GetDocument() const // 디버그되지 않은 버전은 인라인으로 �
 #endif //_DEBUG
 
 
-// CvtkSubView 메시지 처리기
+// CvtkGraphView 메시지 처리기
 
 
-void CvtkSubView::OnInitialUpdate()
+void CvtkGraphView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
 
@@ -173,7 +173,7 @@ void CvtkSubView::OnInitialUpdate()
 }
 
 
-BOOL CvtkSubView::OnEraseBkgnd(CDC* pDC)
+BOOL CvtkGraphView::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	return TRUE;
@@ -181,7 +181,7 @@ BOOL CvtkSubView::OnEraseBkgnd(CDC* pDC)
 }
 
 
-void CvtkSubView::OnSize(UINT nType, int cx, int cy)
+void CvtkGraphView::OnSize(UINT nType, int cx, int cy)
 {
 	CView::OnSize(nType, cx, cy);
 

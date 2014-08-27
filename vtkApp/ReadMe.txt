@@ -1,20 +1,20 @@
 ================================================================================
-    MFC 라이브러리 : vtkWindow 프로젝트 개요
+    MFC 라이브러리 : vtkApp 프로젝트 개요
 ================================================================================
 
-응용 프로그램 마법사에서 이 vtkWindow 응용 프로그램을 
+응용 프로그램 마법사에서 이 vtkApp 응용 프로그램을 
 만들었습니다. 이 응용 프로그램은 MFC의 기본 사용법을 보여 줄 뿐만 아니라 응용 
 프로그램작성을 위한 기본 구조를 제공합니다.
 
-이 파일에는 vtkWindow 응용 프로그램을 구성하는 각 파일에 대한
+이 파일에는 vtkApp 응용 프로그램을 구성하는 각 파일에 대한
 요약 설명이 포함되어 있습니다.
 
-vtkWindow.vcxproj
+vtkApp.vcxproj
     응용 프로그램 마법사를 사용하여 생성된 VC++ 프로젝트의 주 프로젝트 파일입니다. 
     파일을 생성한 Visual C++ 버전에 대한 정보와 응용 프로그램 마법사를 사용하여 선택한 
     플랫폼, 구성 및 프로젝트 기능에 대한 정보가 들어 있습니다.
 
-vtkWindow.vcxproj.filters
+vtkApp.vcxproj.filters
     응용 프로그램 마법사를 사용하여 생성된 VC++ 프로젝트의 필터 파일입니다. 
     이 파일에는 프로젝트의 파일과 필터 간의 연결 정보가 들어 있습니다. 이러한 
     연결은 특정 노드에서 유사한 확장명으로 그룹화된 파일을 표시하기 위해 
@@ -27,21 +27,21 @@ CvtkApp.h
     헤더(Resource.h 포함)가 들어 있고 CvtkApp 응용 프로그램
     클래스를 선언합니다.
 
-vtkWindow.cpp
+vtkApp.cpp
     응용 프로그램 클래스 CvtkApp이(가) 들어 있는 기본 응용 프로그램
     소스 파일입니다.
 
-vtkWindow.rc
+vtkApp.rc
     프로그램에서 사용하는 모든 Microsoft Windows 리소스의 목록입니다.
  여기에는 RES 하위 디렉터리에 저장된 아이콘, 비트맵 및 커서가
     포함됩니다. 이 파일은 Microsoft Visual C++에서 직접
     편집할 수 있습니다. 프로젝트 리소스는 1042에 있습니다.
 
-res\vtkWindow.ico
+res\vtkApp.ico
     응용 프로그램의 아이콘으로 사용되는 아이콘 파일입니다. 이 아이콘은
-    주 리소스 파일인 vtkWindow.rc에 의해 포함됩니다.
+    주 리소스 파일인 vtkApp.rc에 의해 포함됩니다.
 
-res\vtkWindow.rc2
+res\vtkApp.rc2
     이 파일에는 Microsoft Visual C++ 이외의 다른 도구에서 편집한 리소스가 
     들어 있습니다. 리소스 편집기로 편집할 수 없는 모든 리소스는
     이 파일에 넣어야 합니다.
@@ -59,7 +59,7 @@ res\Toolbar.bmp
     이 비트맵 파일은 도구 모음을 위한 바둑판식 이미지를 만드는 데 사용됩니다.
     초기 도구 모음과 상태 표시줄은 CMainFrame 클래스에서 생성됩니다.
  리소스 편집기를 사용하여 이 도구 모음 비트맵을 편집하고
-    vtkWindow.rc의 IDR_MAINFRAME TOOLBAR 배열을 업데이트하여 도구 모음
+    vtkApp.rc의 IDR_MAINFRAME TOOLBAR 배열을 업데이트하여 도구 모음
     단추를 추가합니다.
 /////////////////////////////////////////////////////////////////////////////
 
@@ -73,18 +73,18 @@ ChildFrm.h, ChildFrm.cpp
 
 응용 프로그램 마법사에서 하나의 문서 형식과 하나의 뷰가 만들어집니다.
 
-CvtkDoc.h, vtkWindowDoc.cpp - 문서
+vtkDoc.h, vtkDoc.cpp - 문서
     이 파일에는 CvtkDoc 클래스가 들어 있습니다. 이 파일을 편집하여
     특수한 문서 데이터를 추가하고 CvtkDoc::Serialize를 통해 파일
     저장 및 로드를 구현합니다.
 
-CvtkMainView.h, vtkWindowView.cpp - 문서 뷰
-    이 파일에는 CvtkMainView 클래스가 들어 있습니다.
-    CvtkMainView 개체는 CvtkDoc 개체를 보는 데 사용됩니다.
+vtkPlaneView.h, vtkPlaneView.cpp - 문서 뷰
+    이 파일에는 CvtkPlaneView 클래스가 들어 있습니다.
+    CvtkPlaneView 개체는 CvtkDoc 개체를 보는 데 사용됩니다.
 
-res\vtkWindowDoc.ico
+res\vtkAppDoc.ico
     CvtkDoc 클래스의 MDI 자식 창에 대한 아이콘으로 사용되는
-    아이콘 파일입니다. 이 아이콘은 주 리소스 파일인 vtkWindow.rc에
+    아이콘 파일입니다. 이 아이콘은 주 리소스 파일인 vtkApp.rc에
     의해 포함됩니다.
 
 
@@ -95,7 +95,7 @@ res\vtkWindowDoc.ico
 기타 표준 파일:
 
 StdAfx.h, StdAfx.cpp
-    이 파일은 미리 컴파일된 헤더 파일(PCH)인 vtkWindow.pch와
+    이 파일은 미리 컴파일된 헤더 파일(PCH)인 vtkApp.pch와
     미리 컴파일된 형식 파일인 StdAfx.obj를 빌드하는 데 사용됩니다.
 
 Resource.h

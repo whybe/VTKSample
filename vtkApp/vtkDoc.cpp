@@ -1,5 +1,5 @@
 
-// vtkWindowDoc.cpp : CvtkDoc 클래스의 구현
+// vtkDoc.cpp : CvtkDoc 클래스의 구현
 //
 
 #include "stdafx.h"
@@ -57,7 +57,7 @@ CvtkDoc::CvtkDoc()
 	xRes = 128;
 	yRes = 1;
 
-	OffScreenRndering();
+	//OffScreenRndering();
 }
 
 CvtkDoc::~CvtkDoc()
@@ -313,6 +313,12 @@ void CvtkDoc::SetUpdateTableFromDB()
 		int updateCount = 0;
 		for(int frameNum = 0; frameNum < frameCount; frameNum++)
 		{
+			if (m_bDo != TRUE) 
+			{
+				ret = false;
+				std::cout << "Thread Force Terminate." << std::endl;
+				break;
+			}
 			ret = query->NextRow();
 			if(!ret)
 			{
@@ -388,7 +394,7 @@ UINT CvtkDoc::ThreadFunc(LPVOID pThreadParam)
 	pCvtkDoc->SetUpdateTableFromDB();
 
 	CMDIFrameWnd * pFrame = (CMDIFrameWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrame);
+	ASSERT(pFrame != NULL);
 
 	//pFrame->PostMessage(WM_THREADDONE, 0, 0);
 	pFrame->PostMessage(WM_THREADDONE, 0, (LPARAM)pCvtkDoc);
@@ -411,10 +417,16 @@ void CvtkDoc::StartThread()
 	pThreadParam->pWnd = (CWnd *)this;
 
 	m_pThread = AfxBeginThread(ThreadFunc, pThreadParam);
+
+	m_bDo = TRUE;
+	std::cout << "StartThread" << std::endl;
 }
 
 void CvtkDoc::StopThread()
 {
+	m_bDo = FALSE;
+	std::cout << "StopThread" << std::endl;
+
 	Sleep(100);
 
 	if (::WaitForSingleObject(m_pThread->m_hThread, INFINITE))

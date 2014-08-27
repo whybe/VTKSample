@@ -16,19 +16,19 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
-    <None Include="res\vtkWindow.rc2">
-      <Filter>리소스 파일</Filter>
-    </None>
-    <None Include="res\vtkWindowDoc.ico">
-      <Filter>리소스 파일</Filter>
-    </None>
-    <None Include="res\vtkWindow.ico">
-      <Filter>리소스 파일</Filter>
-    </None>
     <None Include="res\Toolbar.bmp">
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="res\idr_vtkm.ico">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="res\vtkApp.ico">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="res\vtkApp.rc2">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="res\vtkAppDoc.ico">
       <Filter>리소스 파일</Filter>
     </None>
   </ItemGroup>
@@ -60,10 +60,13 @@
     <ClInclude Include="vtkDoc.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="vtkMainView.h">
+    <ClInclude Include="vtkListView.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="vtkSubView.h">
+    <ClInclude Include="vtkPlaneView.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="vtkGraphView.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -86,18 +89,21 @@
     <ClCompile Include="vtkApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="vtkMainView.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="vtkSubView.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="vtkDoc.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="vtkListView.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="vtkPlaneView.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="vtkGraphView.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="vtkWindow.rc">
+    <ResourceCompile Include="vtkApp.rc">
       <Filter>리소스 파일</Filter>
     </ResourceCompile>
   </ItemGroup>

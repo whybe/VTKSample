@@ -1,5 +1,5 @@
 
-// CvtkMainView.h : CvtkMainView 클래스의 인터페이스
+// CvtkPlaneView.h : CvtkPlaneView 클래스의 인터페이스
 //
 
 #pragma once
@@ -8,18 +8,20 @@
 #include <vtkMFCWindow.h>
 #include <vtkWin32OpenGLRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
-#include "vtkMouseInteractorStyle.h"
+//#include "vtkMouseInteractorStyle.h"
 #include <vtkRenderer.h>
 #include <vtkActor.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkNamedColors.h>
 #include <vtkCamera.h>
 
-class CvtkMainView : public CView
+class vtkMouseInteractorStyle;
+
+class CvtkPlaneView : public CView
 {
 protected: // serialization에서만 만들어집니다.
-	CvtkMainView();
-	DECLARE_DYNCREATE(CvtkMainView)
+	CvtkPlaneView();
+	DECLARE_DYNCREATE(CvtkPlaneView)
 
 // 특성입니다.
 public:
@@ -46,7 +48,7 @@ protected:
 
 // 구현입니다.
 public:
-	virtual ~CvtkMainView();
+	virtual ~CvtkPlaneView();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -63,8 +65,8 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 };
 
-#ifndef _DEBUG  // vtkWindowView.cpp의 디버그 버전
-inline CvtkDoc* CvtkMainView::GetDocument() const
+#ifndef _DEBUG  // vtkAppView.cpp의 디버그 버전
+inline CvtkDoc* CvtkPlaneView::GetDocument() const
    { return reinterpret_cast<CvtkDoc*>(m_pDocument); }
 #endif
 
