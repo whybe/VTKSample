@@ -5,8 +5,9 @@
 #include "stdafx.h"
 #include "vtkApp.h"
 #include "vtkDoc.h"
-#include "vtkGraphView.h"
+#include "vtkPlaneView.h"
 #include "vtkListView.h"
+#include "vtkGraphView.h"
 #include "ChildFrm.h"
 #include "MainFrm.h"
 
@@ -21,7 +22,10 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
 	ON_COMMAND(ID_VTK_GRAPH, &CMainFrame::OnvtkGraph)
+	ON_COMMAND(ID_VTK_LIST, &CMainFrame::OnvtkList)
 	ON_MESSAGE(WM_THREADDONE, &CMainFrame::OnThreadDone)
+	ON_MESSAGE(WM_THUMBNAIL, &CMainFrame::OnThumbnail)
+	ON_COMMAND(ID_VTK_PLANE, &CMainFrame::OnVtkPlane)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -118,6 +122,56 @@ CDocument * CMainFrame::GetCurrentDocument()
 	return doc;
 } // CMainFrame::GetCurrentDocument
 
+void CMainFrame::OnVtkPlane()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	if(PlaneViewTemplate == NULL)
+		PlaneViewTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
+		RUNTIME_CLASS(CvtkDoc),
+		RUNTIME_CLASS(CChildFrame),
+		RUNTIME_CLASS(CvtkPlaneView));
+	ASSERT(ListViewTemplate != NULL);
+	if(ListViewTemplate == NULL)
+		return; // internal error should not occur
+
+	CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
+	ASSERT(doc != NULL);
+	if(doc == NULL)
+		return; // should not be possible
+
+	CFrameWnd * frame = PlaneViewTemplate->CreateNewFrame(doc, NULL);
+	ASSERT(frame != NULL);
+	if(frame != NULL)
+	{ /* frame created */
+		frame->InitialUpdateFrame(doc, TRUE);
+	} /* frame created */
+}
+
+void CMainFrame::OnvtkList()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	if(ListViewTemplate == NULL)
+		ListViewTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
+		RUNTIME_CLASS(CvtkDoc),
+		RUNTIME_CLASS(CChildFrame),
+		RUNTIME_CLASS(CvtkListView));
+	ASSERT(ListViewTemplate != NULL);
+	if(ListViewTemplate == NULL)
+		return; // internal error should not occur
+
+	CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
+	ASSERT(doc != NULL);
+	if(doc == NULL)
+		return; // should not be possible
+
+	CFrameWnd * frame = ListViewTemplate->CreateNewFrame(doc, NULL);
+	ASSERT(frame != NULL);
+	if(frame != NULL)
+	{ /* frame created */
+		frame->InitialUpdateFrame(doc, TRUE);
+	} /* frame created */
+}
+
 void CMainFrame::OnvtkGraph()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
@@ -157,5 +211,28 @@ LRESULT CMainFrame::OnThreadDone(WPARAM wParam, LPARAM lParam)
 	doc->UpdatePlaneSource();
 	doc->UpdateAllViews(NULL);
 	std::cout << "UpdatePlaneSource" << std::endl;
+
+	LRESULT ret = SendMessage(WM_COMMAND, ID_VTK_LIST, 0);
+	std::cout << "SendMessage(WM_COMMAND, ID_VTK_LIST) : " << ret << std::endl;
+	
+	doc->StartThread(doc->OffScreenRenderingThreadFunc);
+
 	return TRUE;
 }
+
+LRESULT CMainFrame::OnThumbnail(WPARAM wParam, LPARAM lParam)
+{
+	int frameNum = (int)wParam;
+	CvtkDoc *doc = (CvtkDoc *)lParam;
+	ASSERT(doc != NULL);
+
+	CvtkListView *view = (CvtkListView*)(doc->GetView(RUNTIME_CLASS(CvtkListView)));
+	ASSERT(view != NULL);
+
+	view->Thumbnail(frameNum);
+
+	std::cout << "Thumbnail : " << frameNum << std::endl;
+
+	return TRUE;
+}
+

@@ -1,5 +1,10 @@
 #pragma once
 
+typedef struct tagListViewThreadParam
+{
+	CWnd *pWnd;
+	int frameNum;
+} LISTVIEWTHREADPARAM;
 
 class CvtkDoc;
 
@@ -21,12 +26,21 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	CvtkDoc* GetDocument() const;
-	virtual void OnDraw(CDC* /*pDC*/);
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual BOOL Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
 	virtual void OnInitialUpdate();
+
+	bool m_bDo;
+	CWinThread *m_pThread;
+
+	void Thumbnail(int frameNum);
+	void LoadThumbnail(int frameNum);
+	static UINT ThreadFunc(LPVOID pThreadParam);
+	void StartThread(UINT (*fn)(LPVOID), int frameNum);
+	void StopThread();
+
 protected:
-	CImageList m_ImageList;
+	CImageList* m_ImageList;		// image list holding the thumbnails
 };
 
 #ifndef _DEBUG

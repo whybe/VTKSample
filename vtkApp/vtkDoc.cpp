@@ -50,14 +50,19 @@ CvtkDoc::CvtkDoc()
 		SetAddressCountFromDB();
 		SetFrameCountFromDB();
 		InitializeUpdateTable();
-		StartThread();
+		StartThread(ThreadFunc);
 	}
 
 	//xRes = 64;
 	xRes = 128;
-	yRes = 1;
+	yRes = 0;
+	tableSize = 0;
 
 	//OffScreenRndering();
+
+	//m_thumbnailList.Create(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, ILC_COLOR24, frameCount, 0);
+	//m_thumbnailList.SetImageCount(frameCount);
+	m_imageArray.SetSize(frameCount);
 }
 
 CvtkDoc::~CvtkDoc()
@@ -94,7 +99,7 @@ void CvtkDoc::UpdatePlaneSource()
 #endif
 
 	yRes = addressCount/xRes + 1;
-	int tableSize = xRes*yRes;
+	tableSize = xRes*yRes;
 
 	vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
 
@@ -411,12 +416,13 @@ UINT CvtkDoc::ThreadFunc(LPVOID pThreadParam)
 	return 0;
 }
 
-void CvtkDoc::StartThread()
+void CvtkDoc::StartThread(UINT (*fn)(LPVOID))
 {
 	THREADPARAM *pThreadParam = new THREADPARAM;
 	pThreadParam->pWnd = (CWnd *)this;
 
-	m_pThread = AfxBeginThread(ThreadFunc, pThreadParam);
+	//m_pThread = AfxBeginThread(ThreadFunc, pThreadParam);
+	m_pThread = AfxBeginThread(fn, pThreadParam);
 
 	m_bDo = TRUE;
 	std::cout << "StartThread" << std::endl;
@@ -447,33 +453,122 @@ void CvtkDoc::StopThread()
 #include <vtkWindowToImageFilter.h>
 #include <vtkPNGWriter.h>
 #include <vtkGraphicsFactory.h>
+#include <vtkUnsignedCharArray.h>
+#include <vtkWin32OpenGLRenderWindow.h>
 
-void CvtkDoc::OffScreenRndering()
+void CvtkDoc::OffScreenRendering()
 {
 #ifdef CHECK_TIME
 	float Time;
 	BOOL err;
 	CHECK_TIME_START;
 #endif
-	//sphere 1
-    vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
 
+	for (int frameNum = 0; frameNum < frameCount; frameNum++)
+	{
+		OffScreenRendering(frameNum);
+	}
+
+#ifdef CHECK_TIME
+	CHECK_TIME_END(Time, err);
+	if(err)
+		std::cout << "OffScreenRndering : " << Time << " ms" << std::endl;
+#endif
+}
+
+void CvtkDoc::OffScreenRendering(int frameNum)
+{
+
+	// Create tempTable
+	vtkStdString queryStr = 
+		"select dumpdata.Value, dumpdata.Updated+0 from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' and Frame = " + std::to_string((_ULonglong)frameNum) + " order by Address, Frame";
+	query->SetQuery(queryStr);
+	query->Execute();
+
+	vtkSmartPointer<vtkTable> tempTable = vtkSmartPointer<vtkTable>::New();
+
+	vtkStdString valueName = "Value" + std::to_string((_ULonglong)frameNum);
+	vtkSmartPointer<vtkIntArray> values = vtkSmartPointer<vtkIntArray>::New();
+	values->SetNumberOfComponents(1);
+	values->SetNumberOfValues(addressCount);
+	values->SetName(valueName);
+	tempTable->AddColumn(values);
+
+	vtkStdString updatedName = "Updated" + std::to_string((_ULonglong)frameNum);
+	vtkSmartPointer<vtkIntArray> updateds = vtkSmartPointer<vtkIntArray>::New();
+	updateds->SetNumberOfComponents(1);
+	updateds->SetNumberOfValues(addressCount);
+	updateds->SetName(updatedName);
+	tempTable->AddColumn(updateds);
+
+	bool ret;
+	for(int addressNum = 0; addressNum < addressCount; addressNum++)
+	{
+		//if (m_bDo != TRUE) 
+		//{
+		//	ret = false;
+		//	std::cout << "Thread Force Terminate." << std::endl;
+		//	break;
+		//}
+		ret = query->NextRow();
+		if(!ret)
+		{
+			break;
+		}
+
+		vtkVariant Value = query->DataValue(0);
+		tempTable->SetValueByName(addressNum, valueName, Value);
+		vtkVariant Updated = query->DataValue(1);
+		tempTable->SetValueByName(addressNum, updatedName, Updated.ToInt());
+	}
+
+	//update PlaneSource
+	vtkSmartPointer<vtkPlaneSource> tempPlaneSource = vtkSmartPointer<vtkPlaneSource>::New();
+	tempPlaneSource->SetXResolution(xRes);
+	tempPlaneSource->SetYResolution(yRes);
+	tempPlaneSource->Update();
+
+	vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+	vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(tempTable->GetColumnByName(updatedName)), 0, 1);
+
+	vtkSmartPointer<vtkUnsignedCharArray> colorData = 
+		vtkSmartPointer<vtkUnsignedCharArray>::New();
+	colorData->SetName("colors");
+	colorData->SetNumberOfComponents(3);
+	std::cout 
+		<< "Using a lookup table created from a color transfer function."
+		<< std::endl;
+	vtkUtil::MakeCellData(tableSize, lut, colorData);
+	tempPlaneSource->GetOutput()->GetCellData()->SetScalars(colorData);
+	tempPlaneSource->GetOutput()->GetCellData()->AddArray(updateTable->GetColumnByName("Address"));
+	tempPlaneSource->GetOutput()->GetCellData()->AddArray(tempTable->GetColumnByName(valueName));
+
+	//Off Screen Rendering
     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    mapper->SetInputConnection(sphereSource->GetOutputPort());
-
+    mapper->SetInputConnection(tempPlaneSource->GetOutputPort());
 
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
 
-    // a renderer and render window
     vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-    vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-    renderWindow->SetOffScreenRendering(1);
-    renderWindow->AddRenderer(renderer);
+    //vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+	//renderWindow->SetOffScreenRendering(1);
+	//renderWindow->AddRenderer(renderer);
 
-    // add the actors to the scene
+	
+	vtkSmartPointer<vtkWin32OpenGLRenderWindow> renderWindow = vtkSmartPointer<vtkWin32OpenGLRenderWindow>::New();
+	int size[2] = {300, 300};
+	renderWindow->SetSize(size[0], size[1]); // call before SetOffScreenRendering
+	renderWindow->AddRenderer(renderer); // call before SetOffScreenRendering
+	renderWindow->SetOffScreenRendering(TRUE);
+
+
+    
+	vtkSmartPointer<vtkNamedColors> namedColors = vtkSmartPointer<vtkNamedColors>::New();
+
     renderer->AddActor(actor);
-    renderer->SetBackground(1, 1, 1); // Background color white
+    renderer->SetBackground(
+		namedColors->GetColor3d("white_smoke").GetData());
 
 	renderer->ResetCamera();
 
@@ -483,22 +578,151 @@ void CvtkDoc::OffScreenRndering()
 
     renderWindow->Render();
 
-    vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
-        vtkSmartPointer<vtkWindowToImageFilter>::New();
-    windowToImageFilter->SetInput(renderWindow);
-    windowToImageFilter->Update();
+	//CDC *pDC = CDC::FromHandle((HDC)renderWindow->GetGenericContext());
+	//CDC *pMemDC = new CDC();
+	//CBitmap *pBitmap = new CBitmap();
+	//CBitmap *pOldBitmap;
 
-    vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
-    writer->SetFileName("sphere.png");
-    writer->SetInputConnection(windowToImageFilter->GetOutputPort());
-    writer->Write();
+	//BOOL bOK = FALSE;
 
-#ifdef CHECK_TIME
-	CHECK_TIME_END(Time, err);
-	if(err)
-		std::cout << "OffScreenRndering : " << Time << " ms" << std::endl;
-#endif
+	//if (pBitmap->CreateCompatibleBitmap(pDC, size[0], size[1]) != NULL)
+	//{
+	//	if (pMemDC->CreateCompatibleDC(pDC) != NULL)
+	//	{
+	//		pOldBitmap = pMemDC->SelectObject(pBitmap);
+
+	//		pMemDC->BitBlt(0, 0, size[0], size[1], pDC, 0, 0, SRCCOPY);
+
+	//		pMemDC->SelectObject(pOldBitmap);
+
+	//		bOK = TRUE;
+	//	}
+	//}
+
+	//if(bOK)
+	//{
+	//	CString str;
+	//	str.Format(_T("frame%d.png"), frameNum);
+
+	//	CImage *pImage = new CImage();
+	//	pImage->Attach(*pBitmap);
+	//	pImage->Save(str, Gdiplus::ImageFormatPNG);
+
+	//	delete pImage;
+	//}
+
+	//
+	//delete pBitmap;
+	//delete pMemDC;
+
+
+	vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
+		vtkSmartPointer<vtkWindowToImageFilter>::New();
+	windowToImageFilter->SetInput(renderWindow);
+	windowToImageFilter->Update();
+
+	vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+	writer->WriteToMemoryOn();
+	writer->SetFileName("OffScreen.png");
+	writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+	writer->Write();
+
+	vtkUnsignedCharArray *imageArray = writer->GetResult();
+	//vtkSmartPointer<vtkUnsignedCharArray> imageArray = vtkSmartPointer<vtkUnsignedCharArray>::New();
+	//imageArray->DeepCopy(writer->GetResult());
+	m_imageArray.SetAt(frameNum, imageArray);
+
+	CMDIFrameWnd * pFrame = (CMDIFrameWnd*)AfxGetApp()->m_pMainWnd;
+	ASSERT(pFrame != NULL);
+
+	//pFrame->PostMessage(WM_THREADDONE, 0, 0);
+	pFrame->PostMessage(WM_THUMBNAIL, (WPARAM)frameNum, (LPARAM)this);
+	std::cout << "PostMessage(WM_THUMBNAIL)" << std::endl;
+
+	//IStream *pStream = NULL;
+	//HRESULT hr = CreateStreamOnHGlobal(NULL, TRUE, &pStream);
+	//if(SUCCEEDED(hr))
+ //   {
+	//	ULONG ulWriteByte = 0;
+	//	ULARGE_INTEGER sz;
+	//	sz.HighPart = 0;
+	//	sz.LowPart = imageArray->GetDataSize();
+
+	//	pStream->SetSize(sz);
+	//	pStream->Write(imageArray->GetVoidPointer(0), imageArray->GetDataSize(), &ulWriteByte);
+
+	//	//CString str;
+	//	//str.Format(_T("frame%d.png"), frameNum);
+	//	CImage image;
+	//	image.Load(pStream);
+	//	//image.Save(str, Gdiplus::ImageFormatPNG);
+	//	//m_thumbnailList.Replace(frameNum, CBitmap::FromHandle(image), NULL);
+	//	//delete image;
+
+	//	pStream->Release();
+	//}
+
+	//CString str;
+	//str.Format(_T("frame%d.png"), frameNum);
+	//CFile file;
+	//CFileException e;
+	//if (!file.Open(str, CFile::modeWrite|CFile::modeCreate, &e))
+	//{
+	//	e.ReportError();
+	//}
+
+	//file.Write(imageArray->GetVoidPointer(0), imageArray->GetSize());
+
+	//file.Close();
+
 }
+
+
+UINT CvtkDoc::OffScreenRenderingThreadFunc(LPVOID pThreadParam)
+{
+	THREADPARAM *pParam = (THREADPARAM *)pThreadParam;
+
+	CvtkDoc *pCvtkDoc = (CvtkDoc *)pParam->pWnd;
+	delete pParam;
+
+	// TODO
+	pCvtkDoc->OffScreenRendering();
+
+	//CMDIFrameWnd * pFrame = (CMDIFrameWnd*)AfxGetApp()->m_pMainWnd;
+	//ASSERT(pFrame != NULL);
+
+	////pFrame->PostMessage(WM_THREADDONE, 0, 0);
+	//pFrame->PostMessage(WM_THREADDONE, 0, (LPARAM)pCvtkDoc);
+	//std::cout << "PostMessage(WM_THREADDONE)" << std::endl;
+
+	//LRESULT ret;
+	//ret = pFrame->SendMessage(WM_THREADDONE, 0, 0);
+	//std::cout << "SendMessage(WM_THREADDONE) : " << ret << std::endl;
+	
+	//ret = pView->SendMessage(WM_VTKRENDER, 0, 0);
+	//std::cout << "SendMessage(WM_THREADDONE) : " << ret << std::endl;
+
+	//AfxEndThread(0);
+	return 0;
+}
+
+CView* CvtkDoc::GetView(CRuntimeClass* pClass)
+{
+	CView* pView;
+	POSITION pos = GetFirstViewPosition();
+
+	while (pos != NULL) {
+		pView = GetNextView(pos);
+		if (!pView->IsKindOf(pClass))
+			continue;
+	}
+
+	if (!pView->IsKindOf(pClass)) {
+		return NULL;
+	}
+
+	return pView;
+} 
 
 //BOOL CvtkDoc::QueryData()
 //{

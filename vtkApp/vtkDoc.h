@@ -21,6 +21,9 @@
 #define LABNAME "201408092135"
 //#define LABNAME "201408092137"
 
+#define THUMBNAIL_WIDTH 300
+#define THUMBNAIL_HEIGHT 300
+
 typedef struct tagThreadParam
 {
 	CWnd *pWnd;
@@ -51,9 +54,14 @@ public:
 	
 	int xRes;
 	int yRes;
+	int tableSize;
 
 	bool m_bDo;
 	CWinThread *m_pThread;
+
+	//CImageList m_thumbnailList;
+	//CArray<vtkSmartPointer<vtkUnsignedCharArray>, vtkSmartPointer<vtkUnsignedCharArray>> m_imageArray;
+	CArray<vtkUnsignedCharArray*, vtkUnsignedCharArray*> m_imageArray;
 
 // 작업입니다.
 private:
@@ -64,13 +72,17 @@ private:
 	void InitializeUpdateTable();
 	void SetUpdateTableFromDB();
 	//BOOL QueryData();
-	void OffScreenRndering();
 
 public:
 	static UINT ThreadFunc(LPVOID pThreadParam);
-	void StartThread();
+	void StartThread(UINT (*fn)(LPVOID));
 	void StopThread();
 	void UpdatePlaneSource();
+
+	void OffScreenRendering();
+	void OffScreenRendering(int frameNum);
+	static UINT OffScreenRenderingThreadFunc(LPVOID pThreadParam);
+	CView* CvtkDoc::GetView(CRuntimeClass* pClass);
 
 // 재정의입니다.
 public:

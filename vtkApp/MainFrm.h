@@ -31,9 +31,10 @@ public:
 protected:  // 컨트롤 모음이 포함된 멤버입니다.
 	CToolBar          m_wndToolBar;
 	CStatusBar        m_wndStatusBar;
-
-	CMultiDocTemplate *GraphViewTemplate;
+	
+	CMultiDocTemplate *PlaneViewTemplate;
 	CMultiDocTemplate *ListViewTemplate;
+	CMultiDocTemplate *GraphViewTemplate;
 
 // 생성된 메시지 맵 함수
 protected:
@@ -43,9 +44,11 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 public:
-	afx_msg void OnvtkGraph();
+	afx_msg void OnVtkPlane();
 	afx_msg void OnvtkList();
+	afx_msg void OnvtkGraph();
 	afx_msg LRESULT OnThreadDone(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnThumbnail(WPARAM wParam, LPARAM lParam);
 };
 
 
