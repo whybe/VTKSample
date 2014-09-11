@@ -41,14 +41,16 @@ static UINT indicators[] =
 CMainFrame::CMainFrame()
 {
 	// TODO: 여기에 멤버 초기화 코드를 추가합니다.
-	GraphViewTemplate = NULL;
+	PlaneViewTemplate = NULL;
 	ListViewTemplate = NULL;
+	GraphViewTemplate = NULL;
 }
 
 CMainFrame::~CMainFrame()
 {
-	delete GraphViewTemplate;
+	delete PlaneViewTemplate;
 	delete ListViewTemplate;
+	delete GraphViewTemplate;
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -125,76 +127,118 @@ CDocument * CMainFrame::GetCurrentDocument()
 void CMainFrame::OnVtkPlane()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	if(PlaneViewTemplate == NULL)
-		PlaneViewTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
-		RUNTIME_CLASS(CvtkDoc),
-		RUNTIME_CLASS(CChildFrame),
-		RUNTIME_CLASS(CvtkPlaneView));
-	ASSERT(ListViewTemplate != NULL);
-	if(ListViewTemplate == NULL)
-		return; // internal error should not occur
-
 	CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
 	ASSERT(doc != NULL);
 	if(doc == NULL)
 		return; // should not be possible
 
-	CFrameWnd * frame = PlaneViewTemplate->CreateNewFrame(doc, NULL);
-	ASSERT(frame != NULL);
-	if(frame != NULL)
-	{ /* frame created */
-		frame->InitialUpdateFrame(doc, TRUE);
-	} /* frame created */
+	CView *view = doc->GetView(RUNTIME_CLASS(CvtkPlaneView));
+	//ASSERT(view != NULL);
+	if(view == NULL)
+	{
+		if(PlaneViewTemplate == NULL)
+			PlaneViewTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
+			RUNTIME_CLASS(CvtkDoc),
+			RUNTIME_CLASS(CChildFrame),
+			RUNTIME_CLASS(CvtkPlaneView));
+		ASSERT(PlaneViewTemplate != NULL);
+		if(PlaneViewTemplate == NULL)
+			return; // internal error should not occur
+
+		//CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
+		//ASSERT(doc != NULL);
+		//if(doc == NULL)
+		//	return; // should not be possible
+
+		CFrameWnd * frame = PlaneViewTemplate->CreateNewFrame(doc, NULL);
+		ASSERT(frame != NULL);
+		if(frame != NULL)
+		{ /* frame created */
+			frame->InitialUpdateFrame(doc, TRUE);
+		} /* frame created */
+
+		return;
+	}
+
+	view->GetParentFrame()->ActivateFrame();
 }
 
 void CMainFrame::OnvtkList()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	if(ListViewTemplate == NULL)
-		ListViewTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
-		RUNTIME_CLASS(CvtkDoc),
-		RUNTIME_CLASS(CChildFrame),
-		RUNTIME_CLASS(CvtkListView));
-	ASSERT(ListViewTemplate != NULL);
-	if(ListViewTemplate == NULL)
-		return; // internal error should not occur
-
 	CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
 	ASSERT(doc != NULL);
 	if(doc == NULL)
 		return; // should not be possible
 
-	CFrameWnd * frame = ListViewTemplate->CreateNewFrame(doc, NULL);
-	ASSERT(frame != NULL);
-	if(frame != NULL)
-	{ /* frame created */
-		frame->InitialUpdateFrame(doc, TRUE);
-	} /* frame created */
+	CView *view = doc->GetView(RUNTIME_CLASS(CvtkListView));
+	//ASSERT(view != NULL);
+	if(view == NULL)
+	{
+		if(ListViewTemplate == NULL)
+			ListViewTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
+			RUNTIME_CLASS(CvtkDoc),
+			RUNTIME_CLASS(CChildFrame),
+			RUNTIME_CLASS(CvtkListView));
+		ASSERT(ListViewTemplate != NULL);
+		if(ListViewTemplate == NULL)
+			return; // internal error should not occur
+
+		//CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
+		//ASSERT(doc != NULL);
+		//if(doc == NULL)
+		//	return; // should not be possible
+
+		CFrameWnd * frame = ListViewTemplate->CreateNewFrame(doc, NULL);
+		ASSERT(frame != NULL);
+		if(frame != NULL)
+		{ /* frame created */
+			frame->InitialUpdateFrame(doc, TRUE);
+		} /* frame created */;
+
+		return;
+	}
+
+	view->GetParentFrame()->ActivateFrame();
 }
 
 void CMainFrame::OnvtkGraph()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	if(GraphViewTemplate == NULL)
-		GraphViewTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
-		RUNTIME_CLASS(CvtkDoc),
-		RUNTIME_CLASS(CChildFrame),
-		RUNTIME_CLASS(CvtkGraphView));
-	ASSERT(GraphViewTemplate != NULL);
-	if(GraphViewTemplate == NULL)
-		return; // internal error should not occur
-
 	CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
 	ASSERT(doc != NULL);
 	if(doc == NULL)
 		return; // should not be possible
 
-	CFrameWnd * frame = GraphViewTemplate->CreateNewFrame(doc, NULL);
-	ASSERT(frame != NULL);
-	if(frame != NULL)
-	{ /* frame created */
-		frame->InitialUpdateFrame(doc, TRUE);
-	} /* frame created */
+	CView *view = doc->GetView(RUNTIME_CLASS(CvtkGraphView));
+	//ASSERT(view != NULL);
+	if(view == NULL)
+	{
+		if(GraphViewTemplate == NULL)
+			GraphViewTemplate = new CMultiDocTemplate(IDR_VTKVIEW,
+			RUNTIME_CLASS(CvtkDoc),
+			RUNTIME_CLASS(CChildFrame),
+			RUNTIME_CLASS(CvtkGraphView));
+		ASSERT(GraphViewTemplate != NULL);
+		if(GraphViewTemplate == NULL)
+			return; // internal error should not occur
+
+		//CvtkDoc *doc = (CvtkDoc *)GetCurrentDocument();
+		//ASSERT(doc != NULL);
+		//if(doc == NULL)
+		//	return; // should not be possible
+
+		CFrameWnd * frame = GraphViewTemplate->CreateNewFrame(doc, NULL);
+		ASSERT(frame != NULL);
+		if(frame != NULL)
+		{ /* frame created */
+			frame->InitialUpdateFrame(doc, TRUE);
+		} /* frame created */
+
+		return;
+	}
+
+	view->GetParentFrame()->ActivateFrame();
 }
 
 LRESULT CMainFrame::OnThreadDone(WPARAM wParam, LPARAM lParam)
@@ -227,7 +271,9 @@ LRESULT CMainFrame::OnThumbnail(WPARAM wParam, LPARAM lParam)
 	ASSERT(doc != NULL);
 
 	CvtkListView *view = (CvtkListView*)(doc->GetView(RUNTIME_CLASS(CvtkListView)));
-	ASSERT(view != NULL);
+	//ASSERT(view != NULL);
+	if (view == NULL)
+		return FALSE;
 
 	view->Thumbnail(frameNum);
 

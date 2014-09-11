@@ -60,8 +60,8 @@ public:
 	CWinThread *m_pThread;
 
 	//CImageList m_thumbnailList;
-	//CArray<vtkSmartPointer<vtkUnsignedCharArray>, vtkSmartPointer<vtkUnsignedCharArray>> m_imageArray;
-	CArray<vtkUnsignedCharArray*, vtkUnsignedCharArray*> m_imageArray;
+	CArray<vtkSmartPointer<vtkUnsignedCharArray>, vtkSmartPointer<vtkUnsignedCharArray>> m_imageArray;
+	//CArray<vtkUnsignedCharArray*, vtkUnsignedCharArray*> m_imageArray;
 
 // 작업입니다.
 private:

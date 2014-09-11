@@ -20,6 +20,8 @@ END_MESSAGE_MAP()
 CvtkListView::CvtkListView()
 {
 	m_ImageList = new CImageList;
+
+	m_pThread = NULL;
 }
 
 CvtkListView::~CvtkListView()
@@ -102,6 +104,39 @@ void CvtkListView::OnInitialUpdate()
 		CString str;
 		str.Format(_T("frame%d"), frameNum);
 		ListCtrl.InsertItem(frameNum, str, frameNum);
+
+		vtkUnsignedCharArray *imageArray = GetDocument()->m_imageArray.GetAt(frameNum);
+
+		if (imageArray != NULL)
+		{
+			IStream *pStream = NULL;
+			HRESULT hr = CreateStreamOnHGlobal(NULL, TRUE, &pStream);
+			if(SUCCEEDED(hr))
+			{
+				ULONG ulWriteByte = 0;
+				ULARGE_INTEGER sz;
+				sz.HighPart = 0;
+				sz.LowPart = imageArray->GetDataSize();
+
+				pStream->SetSize(sz);
+				pStream->Write(imageArray->GetVoidPointer(0), imageArray->GetDataSize(), &ulWriteByte);
+
+				//CString str;
+				//str.Format(_T("frame%d.png"), frameNum);
+				CImage image;
+				image.Load(pStream);
+				//image.Save(str, Gdiplus::ImageFormatPNG);
+				//CBitmap bitmap;
+				//bitmap.Attach(image.Detach());
+				//m_ImageList->Replace(frameNum, &bitmap, NULL);
+				m_ImageList->Replace(frameNum, CBitmap::FromHandle(image), NULL);
+				//bitmap.DeleteObject();
+				//delete image;
+		
+
+				pStream->Release();
+			}
+		}
 	}
 	ListCtrl.SetRedraw(TRUE);
 	ListCtrl.Invalidate();

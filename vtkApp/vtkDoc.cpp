@@ -627,9 +627,10 @@ void CvtkDoc::OffScreenRendering(int frameNum)
 	writer->SetInputConnection(windowToImageFilter->GetOutputPort());
 	writer->Write();
 
-	vtkUnsignedCharArray *imageArray = writer->GetResult();
-	//vtkSmartPointer<vtkUnsignedCharArray> imageArray = vtkSmartPointer<vtkUnsignedCharArray>::New();
-	//imageArray->DeepCopy(writer->GetResult());
+	//vtkUnsignedCharArray *imageArray = writer->GetResult();
+	vtkSmartPointer<vtkUnsignedCharArray> imageArray = vtkSmartPointer<vtkUnsignedCharArray>::New();
+	imageArray->DeepCopy(writer->GetResult());
+	//m_imageArray.SetAt(frameNum, (vtkUnsignedCharArray*)imageArray);
 	m_imageArray.SetAt(frameNum, imageArray);
 
 	CMDIFrameWnd * pFrame = (CMDIFrameWnd*)AfxGetApp()->m_pMainWnd;
@@ -713,8 +714,8 @@ CView* CvtkDoc::GetView(CRuntimeClass* pClass)
 
 	while (pos != NULL) {
 		pView = GetNextView(pos);
-		if (!pView->IsKindOf(pClass))
-			continue;
+		if (pView->IsKindOf(pClass))
+			break;
 	}
 
 	if (!pView->IsKindOf(pClass)) {
