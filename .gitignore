@@ -96,6 +96,12 @@ Thumbs.db
 # Folder config file
 Desktop.ini
 
+############
+## Etc
+############
+
 # Mac crap
 .DS_Store
 
+# Backup File
+*.bak
