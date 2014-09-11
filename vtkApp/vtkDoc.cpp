@@ -15,6 +15,20 @@
 
 #include <propkey.h>
 
+
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
+#include <vtkWindowToImageFilter.h>
+#include <vtkPNGWriter.h>
+#include <vtkGraphicsFactory.h>
+#include <vtkUnsignedCharArray.h>
+#include <vtkWin32OpenGLRenderWindow.h>
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -60,9 +74,13 @@ CvtkDoc::CvtkDoc()
 
 	//OffScreenRndering();
 
+	m_listNum = 0;
+
 	//m_thumbnailList.Create(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, ILC_COLOR24, frameCount, 0);
 	//m_thumbnailList.SetImageCount(frameCount);
-	m_imageArray.SetSize(frameCount);
+	m_imageArray.SetSize(frameCount + 1);
+
+	m_planeSourceArray.SetSize(frameCount + 1);
 }
 
 CvtkDoc::~CvtkDoc()
@@ -111,7 +129,7 @@ void CvtkDoc::UpdatePlaneSource()
 	planeSource->Update();
 
 	//MakeLUTFromCTF(tableSize, lut, addressCount, updates);
-	vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(updateTable->GetColumnByName("Total")), 0, frameCount);
+	vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(updateTable->GetColumnByName("Value")), 0, frameCount);
 	//vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(updateTable->GetColumnByName("Frame1")), 0, 1);
 
 	vtkSmartPointer<vtkUnsignedCharArray> colorData = 
@@ -124,7 +142,10 @@ void CvtkDoc::UpdatePlaneSource()
 	vtkUtil::MakeCellData(tableSize, lut, colorData);
 	planeSource->GetOutput()->GetCellData()->SetScalars(colorData);
 	planeSource->GetOutput()->GetCellData()->AddArray(updateTable->GetColumnByName("Address"));
-	planeSource->GetOutput()->GetCellData()->AddArray(updateTable->GetColumnByName("Total"));
+	planeSource->GetOutput()->GetCellData()->AddArray(updateTable->GetColumnByName("Value"));
+
+	m_listNum = 0;
+	m_planeSourceArray.SetAt(m_listNum, planeSource);
 
 #ifdef CHECK_TIME
 	CHECK_TIME_END(Time, err);
@@ -133,6 +154,15 @@ void CvtkDoc::UpdatePlaneSource()
 #endif
 }
 
+vtkPlaneSource * CvtkDoc::GetPlaneSource()
+{
+	return m_planeSourceArray.GetAt(m_listNum);
+}
+
+vtkPlaneSource * CvtkDoc::GetPlaneSource(int listNum)
+{
+	return m_planeSourceArray.GetAt(listNum);
+}
 
 // CvtkDoc serialization
 
@@ -273,7 +303,7 @@ void CvtkDoc::InitializeUpdateTable()
 	vtkSmartPointer<vtkIntArray> sumOfUpdateds = vtkSmartPointer<vtkIntArray>::New();
 	sumOfUpdateds->SetNumberOfComponents(1);
 	sumOfUpdateds->SetNumberOfValues(addressCount);
-	sumOfUpdateds->SetName("Total");
+	sumOfUpdateds->SetName("Value");
 	updateTable->AddColumn(sumOfUpdateds);
 
 	vtkSmartPointer<vtkIntArray> sections = vtkSmartPointer<vtkIntArray>::New();
@@ -374,7 +404,7 @@ void CvtkDoc::SetUpdateTableFromDB()
 		//}
 
 		//updates->SetValue(addressNum, updateCount);
-		updateTable->SetValueByName(addressNum, "Total", updateCount);
+		updateTable->SetValueByName(addressNum, "Value", updateCount);
 		updateTable->SetValueByName(addressNum, "Section", Section);
 		updateTable->SetValueByName(addressNum, "Address", Address);
 	}
@@ -443,18 +473,15 @@ void CvtkDoc::StopThread()
 	}
 }
 
-#include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderer.h>
-#include <vtkPolyData.h>
-#include <vtkSmartPointer.h>
-#include <vtkSphereSource.h>
-#include <vtkWindowToImageFilter.h>
-#include <vtkPNGWriter.h>
-#include <vtkGraphicsFactory.h>
-#include <vtkUnsignedCharArray.h>
-#include <vtkWin32OpenGLRenderWindow.h>
+void CvtkDoc::SelectItem(int listNum)
+{
+	if (m_listNum == listNum)
+		return;
+
+	m_listNum = listNum;
+	UpdateAllViews(NULL);
+}
+
 
 void CvtkDoc::OffScreenRendering()
 {
@@ -469,6 +496,8 @@ void CvtkDoc::OffScreenRendering()
 		OffScreenRendering(frameNum);
 	}
 
+	OffScreenRenderingPlane();
+
 #ifdef CHECK_TIME
 	CHECK_TIME_END(Time, err);
 	if(err)
@@ -478,74 +507,13 @@ void CvtkDoc::OffScreenRendering()
 
 void CvtkDoc::OffScreenRendering(int frameNum)
 {
+	int listNum = frameNum + 1;
 
-	// Create tempTable
-	vtkStdString queryStr = 
-		"select dumpdata.Value, dumpdata.Updated+0 from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' and Frame = " + std::to_string((_ULonglong)frameNum) + " order by Address, Frame";
-	query->SetQuery(queryStr);
-	query->Execute();
-
-	vtkSmartPointer<vtkTable> tempTable = vtkSmartPointer<vtkTable>::New();
-
-	vtkStdString valueName = "Value" + std::to_string((_ULonglong)frameNum);
-	vtkSmartPointer<vtkIntArray> values = vtkSmartPointer<vtkIntArray>::New();
-	values->SetNumberOfComponents(1);
-	values->SetNumberOfValues(addressCount);
-	values->SetName(valueName);
-	tempTable->AddColumn(values);
-
-	vtkStdString updatedName = "Updated" + std::to_string((_ULonglong)frameNum);
-	vtkSmartPointer<vtkIntArray> updateds = vtkSmartPointer<vtkIntArray>::New();
-	updateds->SetNumberOfComponents(1);
-	updateds->SetNumberOfValues(addressCount);
-	updateds->SetName(updatedName);
-	tempTable->AddColumn(updateds);
-
-	bool ret;
-	for(int addressNum = 0; addressNum < addressCount; addressNum++)
-	{
-		//if (m_bDo != TRUE) 
-		//{
-		//	ret = false;
-		//	std::cout << "Thread Force Terminate." << std::endl;
-		//	break;
-		//}
-		ret = query->NextRow();
-		if(!ret)
-		{
-			break;
-		}
-
-		vtkVariant Value = query->DataValue(0);
-		tempTable->SetValueByName(addressNum, valueName, Value);
-		vtkVariant Updated = query->DataValue(1);
-		tempTable->SetValueByName(addressNum, updatedName, Updated.ToInt());
-	}
-
-	//update PlaneSource
-	vtkSmartPointer<vtkPlaneSource> tempPlaneSource = vtkSmartPointer<vtkPlaneSource>::New();
-	tempPlaneSource->SetXResolution(xRes);
-	tempPlaneSource->SetYResolution(yRes);
-	tempPlaneSource->Update();
-
-	vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
-	vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(tempTable->GetColumnByName(updatedName)), 0, 1);
-
-	vtkSmartPointer<vtkUnsignedCharArray> colorData = 
-		vtkSmartPointer<vtkUnsignedCharArray>::New();
-	colorData->SetName("colors");
-	colorData->SetNumberOfComponents(3);
-	std::cout 
-		<< "Using a lookup table created from a color transfer function."
-		<< std::endl;
-	vtkUtil::MakeCellData(tableSize, lut, colorData);
-	tempPlaneSource->GetOutput()->GetCellData()->SetScalars(colorData);
-	tempPlaneSource->GetOutput()->GetCellData()->AddArray(updateTable->GetColumnByName("Address"));
-	tempPlaneSource->GetOutput()->GetCellData()->AddArray(tempTable->GetColumnByName(valueName));
+	OffScreenRenderingQuery(frameNum);
 
 	//Off Screen Rendering
     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    mapper->SetInputConnection(tempPlaneSource->GetOutputPort());
+	mapper->SetInputConnection(GetPlaneSource(listNum)->GetOutputPort());
 
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
@@ -631,7 +599,7 @@ void CvtkDoc::OffScreenRendering(int frameNum)
 	vtkSmartPointer<vtkUnsignedCharArray> imageArray = vtkSmartPointer<vtkUnsignedCharArray>::New();
 	imageArray->DeepCopy(writer->GetResult());
 	//m_imageArray.SetAt(frameNum, (vtkUnsignedCharArray*)imageArray);
-	m_imageArray.SetAt(frameNum, imageArray);
+	m_imageArray.SetAt(listNum, imageArray);
 
 	CMDIFrameWnd * pFrame = (CMDIFrameWnd*)AfxGetApp()->m_pMainWnd;
 	ASSERT(pFrame != NULL);
@@ -676,6 +644,133 @@ void CvtkDoc::OffScreenRendering(int frameNum)
 
 	//file.Close();
 
+}
+
+void CvtkDoc::OffScreenRenderingQuery(int frameNum)
+{
+	// Create tempTable
+	vtkStdString queryStr = 
+		"select dumpdata.Value, dumpdata.Updated+0 from labname, dumpdata where labname.ID = dumpdata.LABID and labname.LabName = '" + labName + "' and Frame = " + std::to_string((_ULonglong)frameNum) + " order by Address, Frame";
+	query->SetQuery(queryStr);
+	query->Execute();
+
+	vtkSmartPointer<vtkTable> tempTable = vtkSmartPointer<vtkTable>::New();
+
+	//vtkStdString valueName = "Value" + std::to_string((_ULonglong)frameNum);
+	vtkStdString valueName = "Value";
+	vtkSmartPointer<vtkIntArray> values = vtkSmartPointer<vtkIntArray>::New();
+	values->SetNumberOfComponents(1);
+	values->SetNumberOfValues(addressCount);
+	values->SetName(valueName);
+	tempTable->AddColumn(values);
+
+	vtkStdString updatedName = "Updated" + std::to_string((_ULonglong)frameNum);
+	vtkSmartPointer<vtkIntArray> updateds = vtkSmartPointer<vtkIntArray>::New();
+	updateds->SetNumberOfComponents(1);
+	updateds->SetNumberOfValues(addressCount);
+	updateds->SetName(updatedName);
+	tempTable->AddColumn(updateds);
+
+	bool ret;
+	for(int addressNum = 0; addressNum < addressCount; addressNum++)
+	{
+		//if (m_bDo != TRUE) 
+		//{
+		//	ret = false;
+		//	std::cout << "Thread Force Terminate." << std::endl;
+		//	break;
+		//}
+		ret = query->NextRow();
+		if(!ret)
+		{
+			break;
+		}
+
+		vtkVariant Value = query->DataValue(0);
+		tempTable->SetValueByName(addressNum, valueName, Value);
+		vtkVariant Updated = query->DataValue(1);
+		tempTable->SetValueByName(addressNum, updatedName, Updated.ToInt());
+	}
+
+	//update PlaneSource
+	vtkSmartPointer<vtkPlaneSource> tempPlaneSource = vtkSmartPointer<vtkPlaneSource>::New();
+	tempPlaneSource->SetXResolution(xRes);
+	tempPlaneSource->SetYResolution(yRes);
+	tempPlaneSource->Update();
+
+	vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+	vtkUtil::MakeLUTFromCTF(tableSize, lut, addressCount, vtkIntArray::SafeDownCast(tempTable->GetColumnByName(updatedName)), 0, 1);
+
+	vtkSmartPointer<vtkUnsignedCharArray> colorData = 
+		vtkSmartPointer<vtkUnsignedCharArray>::New();
+	colorData->SetName("colors");
+	colorData->SetNumberOfComponents(3);
+	std::cout 
+		<< "Using a lookup table created from a color transfer function."
+		<< std::endl;
+	vtkUtil::MakeCellData(tableSize, lut, colorData);
+	tempPlaneSource->GetOutput()->GetCellData()->SetScalars(colorData);
+	tempPlaneSource->GetOutput()->GetCellData()->AddArray(updateTable->GetColumnByName("Address"));
+	tempPlaneSource->GetOutput()->GetCellData()->AddArray(tempTable->GetColumnByName(valueName));
+	
+	int listNum = frameNum + 1;
+	m_planeSourceArray.SetAt(listNum, tempPlaneSource);
+}
+
+void CvtkDoc::OffScreenRenderingPlane()
+{
+	//Off Screen Rendering
+	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper->SetInputConnection(GetPlaneSource(0)->GetOutputPort());
+
+	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+	actor->SetMapper(mapper);
+
+	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+
+	vtkSmartPointer<vtkWin32OpenGLRenderWindow> renderWindow = vtkSmartPointer<vtkWin32OpenGLRenderWindow>::New();
+	int size[2] = {300, 300};
+	renderWindow->SetSize(size[0], size[1]); // call before SetOffScreenRendering
+	renderWindow->AddRenderer(renderer); // call before SetOffScreenRendering
+	renderWindow->SetOffScreenRendering(TRUE);
+
+	vtkSmartPointer<vtkNamedColors> namedColors = vtkSmartPointer<vtkNamedColors>::New();
+
+	renderer->AddActor(actor);
+	renderer->SetBackground(
+		namedColors->GetColor3d("white_smoke").GetData());
+
+	renderer->ResetCamera();
+
+	vtkCamera *camera = renderer->GetActiveCamera();
+	camera->ParallelProjectionOn();
+	camera->SetParallelScale(0.5);
+
+	renderWindow->Render();
+
+	vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
+		vtkSmartPointer<vtkWindowToImageFilter>::New();
+	windowToImageFilter->SetInput(renderWindow);
+	windowToImageFilter->Update();
+
+	vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+	writer->WriteToMemoryOn();
+	writer->SetFileName("OffScreen.png");
+	writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+	writer->Write();
+
+	//vtkUnsignedCharArray *imageArray = writer->GetResult();
+	vtkSmartPointer<vtkUnsignedCharArray> imageArray = vtkSmartPointer<vtkUnsignedCharArray>::New();
+	imageArray->DeepCopy(writer->GetResult());
+	//m_imageArray.SetAt(frameNum, (vtkUnsignedCharArray*)imageArray);
+	m_imageArray.SetAt(0, imageArray);
+
+	CMDIFrameWnd * pFrame = (CMDIFrameWnd*)AfxGetApp()->m_pMainWnd;
+	ASSERT(pFrame != NULL);
+
+	//pFrame->PostMessage(WM_THREADDONE, 0, 0);
+	pFrame->PostMessage(WM_THUMBNAIL, (WPARAM)frameCount, (LPARAM)this);
+	std::cout << "PostMessage(WM_THUMBNAIL)" << std::endl;
 }
 
 

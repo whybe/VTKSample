@@ -41,6 +41,10 @@ public:
 
 protected:
 	CImageList* m_ImageList;		// image list holding the thumbnails
+public:
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnNMClick(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnNMDblclk(NMHDR *pNMHDR, LRESULT *pResult);
 };
 
 #ifndef _DEBUG

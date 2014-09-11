@@ -136,20 +136,20 @@ void CvtkPlaneView::OnInitialUpdate()
 	//camera->SetParallelScale(0.482963);
 	std::cout << "parallel scale : " << camera->GetParallelScale() << std::endl;
 
-	if(NULL != GetDocument()->planeSource)
-	{
-		// Create a mapper and actor
-		polyDataMapper->SetInputData(
-			GetDocument()->planeSource->GetOutput());
-		actor->SetMapper(polyDataMapper);
-		
-		mouseInteractorStyle->addressCount = GetDocument()->addressCount;
-		mouseInteractorStyle->polyData = 
-			GetDocument()->planeSource->GetOutput();
+	//if(NULL != GetDocument()->GetPlaneSource(0))
+	//{
+	//	// Create a mapper and actor
+	//	polyDataMapper->SetInputData(
+	//		GetDocument()->GetPlaneSource(0)->GetOutput());
+	//	actor->SetMapper(polyDataMapper);
+	//	
+	//	mouseInteractorStyle->addressCount = GetDocument()->addressCount;
+	//	mouseInteractorStyle->polyData = 
+	//		GetDocument()->GetPlaneSource(0)->GetOutput();
 
-		// renderer
-		renderer->AddActor(actor);
-	}
+	//	// renderer
+	//	renderer->AddActor(actor);
+	//}
 }
 
 BOOL CvtkPlaneView::OnEraseBkgnd(CDC* pDC)
@@ -167,4 +167,27 @@ void CvtkPlaneView::OnSize(UINT nType, int cx, int cy)
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	if(NULL != MFCWindow)
 		MFCWindow->MoveWindow(0, 0, cx, cy);
+}
+
+void CvtkPlaneView::OnUpdate(CView* /*pSender*/, LPARAM /*lHint*/, CObject* /*pHint*/)
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	std::cout << "OnUpate" << std::endl;
+
+	if(NULL != GetDocument()->GetPlaneSource())
+	{
+		// Create a mapper and actor
+		polyDataMapper->SetInputData(
+			GetDocument()->GetPlaneSource()->GetOutput());
+		actor->SetMapper(polyDataMapper);
+		
+		mouseInteractorStyle->addressCount = GetDocument()->addressCount;
+		mouseInteractorStyle->polyData = 
+			GetDocument()->GetPlaneSource()->GetOutput();
+
+		// renderer
+		renderer->AddActor(actor);
+	}
+
+	Invalidate();
 }

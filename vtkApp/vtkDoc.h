@@ -14,7 +14,7 @@
 #include <vtkSQLQuery.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkCellData.h>
-
+#include <vtkNamedColors.h>
 #include <vtkCamera.h>
 
 //#define LABID "asds"
@@ -36,6 +36,9 @@ protected: // serialization에서만 만들어집니다.
 	DECLARE_DYNCREATE(CvtkDoc)
 
 // 특성입니다.
+protected:
+	vtkSmartPointer<vtkPlaneSource> planeSource;
+
 public:
 	vtkSmartPointer<vtkMySQLDatabase> db;
 	vtkSmartPointer<vtkSQLQuery> query;
@@ -50,7 +53,6 @@ public:
 
 	//vtkSmartPointer<vtkIntArray> updates;
 	vtkSmartPointer<vtkTable> updateTable;
-	vtkSmartPointer<vtkPlaneSource> planeSource;
 	
 	int xRes;
 	int yRes;
@@ -59,9 +61,13 @@ public:
 	bool m_bDo;
 	CWinThread *m_pThread;
 
+	int m_listNum;
+
 	//CImageList m_thumbnailList;
 	CArray<vtkSmartPointer<vtkUnsignedCharArray>, vtkSmartPointer<vtkUnsignedCharArray>> m_imageArray;
 	//CArray<vtkUnsignedCharArray*, vtkUnsignedCharArray*> m_imageArray;
+
+	CArray<vtkSmartPointer<vtkPlaneSource>, vtkSmartPointer<vtkPlaneSource>> m_planeSourceArray;
 
 // 작업입니다.
 private:
@@ -79,8 +85,15 @@ public:
 	void StopThread();
 	void UpdatePlaneSource();
 
+	vtkPlaneSource *GetPlaneSource(int listNum);
+	vtkPlaneSource *GetPlaneSource();
+
+	void SelectItem(int listNum);
+
 	void OffScreenRendering();
 	void OffScreenRendering(int frameNum);
+	void OffScreenRenderingQuery(int frameNum);
+	void OffScreenRenderingPlane();
 	static UINT OffScreenRenderingThreadFunc(LPVOID pThreadParam);
 	CView* CvtkDoc::GetView(CRuntimeClass* pClass);
 

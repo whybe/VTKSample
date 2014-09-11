@@ -100,6 +100,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
+    <None Include="res\bitmap1.bmp" />
     <None Include="res\idr_vtkm.ico" />
     <None Include="res\Toolbar.bmp" />
     <None Include="res\vtkApp.ico" />

@@ -134,10 +134,10 @@ void vtkMouseInteractorStyle::OnMouseMove()
 		textActor->GetTextProperty()->SetFontSize(24);
 		textActor->SetPosition2(10, 40);
 		vtkVariant address = vtkIntArray::SafeDownCast(this->polyData->GetCellData()->GetArray("Address"))->GetVariantValue(picker->GetCellId());
-		vtkVariant updated = vtkIntArray::SafeDownCast(this->polyData->GetCellData()->GetArray("Total"))->GetVariantValue(picker->GetCellId());
+		vtkVariant updated = vtkIntArray::SafeDownCast(this->polyData->GetCellData()->GetArray("Value"))->GetVariantValue(picker->GetCellId());
 		std::stringstream stream;
 		stream << "Address : " << vtkUtil::int_to_hex<int>(address.ToInt()) << std::endl 
-			<< "Updated : " << updated.ToString();
+			<< "Value : " << updated.ToString();
 		textActor->SetInput(stream.str().c_str());
 		textActor->GetTextProperty()->SetColor(0.0, 0.25, 0.6);
 
